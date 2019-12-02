@@ -22,12 +22,21 @@
 
 #ifndef MIYUKIRENDERER_DEFS_H
 #define MIYUKIRENDERER_DEFS_H
+
+#ifdef MYK_USE_BOOST_FS
+#include <boost/filsystem.hpp>
+namespace miyuki {
+    namespace fs = boost::filesystem;
+}
+#else
 #include <filesystem>
 
-namespace miyuki{
+namespace miyuki {
     namespace fs = std::filesystem;
+}
+#endif
 
-
+namespace miyuki{
     using Float = float;
     constexpr Float Pi = 3.1415926535f;
     constexpr Float Pi2 = Pi * 0.5f;
