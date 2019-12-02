@@ -24,6 +24,8 @@
 #define MIYUKIRENDERER_FILM_H
 
 #include <miyuki.foundation/math.hpp>
+#include <algorithm>
+
 namespace miyuki::core {
     struct Pixel {
         vec3 color;

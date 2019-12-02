@@ -27,6 +27,8 @@
 #include <nlohmann/json_fwd.hpp>
 #include <xmmintrin.h>
 #include <glm/glm.hpp>
+#include <cmath>
+
 
 namespace miyuki {
     using Float = float;
