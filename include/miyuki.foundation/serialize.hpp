@@ -38,59 +38,46 @@ namespace miyuki {
 
 #include <miyuki.foundation/math.hpp>
 
-namespace miyuki {
-    template <class> struct shared_ptr_unwrap {};
-
-    template <class T> struct shared_ptr_unwrap<std::shared_ptr<T>> { using type = std::decay_t<T>; };
-
+namespace glm {
     using json = nlohmann::json;
 
-    template <class T, size_t N> inline void to_json(json &j, const Vec<T, N> &v) {
+    template<int N, typename T, qualifier Q>
+    inline void to_json(json &j, const vec<N, T, Q> &v) {
         j = json::array();
         for (int i = 0; i < N; i++) {
             j[i] = v[i];
         }
     }
 
-    template <class T, size_t N> inline void from_json(const json &j, Vec<T, N> &v) {
+    template<int N, typename T, qualifier Q>
+    inline void from_json(const json &j, vec<N, T, Q> &v) {
         for (int i = 0; i < N; i++) {
             v[i] = j[i];
         }
     }
 
-    inline void to_json(json &j, const Vec3f &v) {
-        j = json::array();
-        for (int i = 0; i < 3; i++) {
-            j[i] = v[i];
-        }
-    }
-
-    inline void from_json(const json &j, Vec3f &v) {
-        for (int i = 0; i < 3; i++) {
-            v[i] = j[i];
-        }
-    }
-
-    inline void to_json(json &j, const Matrix4 &m) {
+    inline void to_json(json &j, const mat4 &m) {
         j = json::array();
         for (int i = 0; i < 4; i++) {
             j[i] = m[i];
         }
     }
 
-    inline void from_json(const json &j, Matrix4 &m) {
+    inline void from_json(const json &j, mat4 &m) {
         for (int i = 0; i < 4; i++) {
-            m[i] = j[i].get<Vec<Float, 4>>();
+            m[i] = j[i].get<vec4>();
         }
     }
-
+}
+namespace miyuki {
     inline void to_json(json &j, const Transform &transform) { j = transform.matrix(); }
 
-    inline void from_json(const json &j, Transform &transform) { transform = Transform(j.get<Matrix4>()); }
+    inline void from_json(const json &j, Transform &transform) { transform = Transform(j.get<mat4>()); }
 
 } // namespace miyuki
 namespace nlohmann {
-    template <typename T> struct adl_serializer<std::shared_ptr<T>> {
+    template<typename T>
+    struct adl_serializer<std::shared_ptr<T>> {
         static void to_json(json &j, const std::shared_ptr<T> &opt) { MIYUKI_NOT_IMPLEMENTED(); }
 
         static void from_json(const json &j, std::shared_ptr<T> &p) {
@@ -109,12 +96,14 @@ namespace miyuki::serialize {
         std::unordered_map<size_t, std::shared_ptr<Object>> _refs;
         std::unordered_set<size_t> _serialized;
 
-      public:
+    public:
         using JSONInputArchive::JSONInputArchive;
 
-        template <class T> void addRef(size_t addr, const std::shared_ptr<T> &p) { _refs[addr] = p; }
+        template<class T>
+        void addRef(size_t addr, const std::shared_ptr<T> &p) { _refs[addr] = p; }
 
-        template <class T> void addRef(size_t addr, const std::weak_ptr<T> &p) { _refs[addr] = p.lock(); }
+        template<class T>
+        void addRef(size_t addr, const std::weak_ptr<T> &p) { _refs[addr] = p.lock(); }
 
         void addSerializedRef(size_t addr) { _serialized.insert(addr); }
 
@@ -122,7 +111,8 @@ namespace miyuki::serialize {
 
         bool hasSerialized(size_t addr) const { return _serialized.find(addr) != _serialized.end(); }
 
-        template <class T> std::shared_ptr<T> getRef(size_t addr) const {
+        template<class T>
+        std::shared_ptr<T> getRef(size_t addr) const {
             return std::dynamic_pointer_cast<T>(_refs.at(addr));
         }
     };
@@ -130,25 +120,30 @@ namespace miyuki::serialize {
     class OutputArchive : public cereal::JSONOutputArchive {
         std::unordered_set<Object *> _serialized;
 
-      public:
+    public:
         using JSONOutputArchive::JSONOutputArchive;
 
-        template <class T> void addSerialized(std::shared_ptr<T> p) { _serialized.insert(p.get()); }
+        template<class T>
+        void addSerialized(std::shared_ptr<T> p) { _serialized.insert(p.get()); }
 
-        template <class T> bool hasSerialized(std::shared_ptr<T> p) const {
+        template<class T>
+        bool hasSerialized(std::shared_ptr<T> p) const {
             return _serialized.find(p.get()) != _serialized.end();
         }
 
-        template <class T> void addSerialized(std::weak_ptr<T> p) { _serialized.insert(p.get()); }
+        template<class T>
+        void addSerialized(std::weak_ptr<T> p) { _serialized.insert(p.get()); }
 
-        template <class T> bool hasSerialized(std::weak_ptr<T> p) const {
+        template<class T>
+        bool hasSerialized(std::weak_ptr<T> p) const {
             return _serialized.find(p.get()) != _serialized.end();
         }
     };
 } // namespace miyuki::serialize
 
 namespace cereal {
-    template <class Archive, class T> inline void save(Archive &ar, std::shared_ptr<T> const &p) {
+    template<class Archive, class T>
+    inline void save(Archive &ar, std::shared_ptr<T> const &p) {
         // using Archive = kaede::OutputArchive;
         if (!p) {
             ar(CEREAL_NVP_("#valid", 0));
@@ -171,7 +166,8 @@ namespace cereal {
         }
     }
 
-    template <class Archive, class T> inline void load(Archive &ar, std::shared_ptr<T> &p) {
+    template<class Archive, class T>
+    inline void load(Archive &ar, std::shared_ptr<T> &p) {
         int32_t valid;
         ar(CEREAL_NVP_("#valid", valid));
         if (!valid) {
@@ -202,7 +198,7 @@ namespace cereal {
         }
     }
 
-    template <class Archive, class T, typename = std::enable_if_t<std::is_base_of_v<miyuki::Object, T>>>
+    template<class Archive, class T, typename = std::enable_if_t<std::is_base_of_v<miyuki::Object, T>>>
     inline void save(Archive &ar, std::weak_ptr<T> const &p) {
         // using Archive = kaede::OutputArchive;
         if (!p) {
@@ -226,7 +222,8 @@ namespace cereal {
         }
     }
 
-    template <class Archive, class T> inline void load(Archive &ar, std::weak_ptr<T> &p) {
+    template<class Archive, class T>
+    inline void load(Archive &ar, std::weak_ptr<T> &p) {
         int32_t valid;
         ar(CEREAL_NVP_("#valid", valid));
         if (!valid) {
@@ -259,24 +256,28 @@ namespace cereal {
     }
 } // namespace cereal
 namespace cereal {
-    template <class Archive, class T> void safe_apply(Archive &ar, const char *name, T &val) {
+    template<class Archive, class T>
+    void safe_apply(Archive &ar, const char *name, T &val) {
         try {
             ar(CEREAL_NVP_(name, val));
         } catch (cereal::Exception &e) {
-            (void)e; //
+            (void) e; //
         }
     }
 } // namespace cereal
 
 namespace miyuki::serialize {
-    template <class Archive> struct ArchivingVisitor {
+    template<class Archive>
+    struct ArchivingVisitor {
         Archive &ar;
 
         ArchivingVisitor(Archive &ar) : ar(ar) {}
 
-        template <class T> void visit(T &v, const char *name) { cereal::safe_apply(ar, name, v); }
+        template<class T>
+        void visit(T &v, const char *name) { cereal::safe_apply(ar, name, v); }
 
-        template <class T> void visit(const T &v, const char *name) { cereal::safe_apply(ar, name, v); }
+        template<class T>
+        void visit(const T &v, const char *name) { cereal::safe_apply(ar, name, v); }
     };
 
     struct InitializeVisitor {
@@ -284,17 +285,22 @@ namespace miyuki::serialize {
 
         InitializeVisitor(const json &params) : params(params) {}
 
-        template <class T> void visit(T &v, const char *name) {
+        template<class T>
+        void visit(T &v, const char *name) {
             if (params.contains(name)) {
                 v = params.at(name).get<T>();
             }
         }
     };
 
-    template <class... Args> void _assign(Args...) noexcept {}
+    template<class... Args>
+    void _assign(Args...) noexcept {}
 
-    template <class> struct GetMethodSelfType {};
-    template <class T, class Ret, class... Args> struct GetMethodSelfType<Ret (T::*)(Args...) const> {
+    template<class>
+    struct GetMethodSelfType {
+    };
+    template<class T, class Ret, class... Args>
+    struct GetMethodSelfType<Ret (T::*)(Args...) const> {
         using type = std::decay_t<T>;
     };
 } // namespace miyuki::serialize

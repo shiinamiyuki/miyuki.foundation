@@ -20,35 +20,18 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef MIYUKIRENDERER_ENTITY_FUNCS_H
-#define MIYUKIRENDERER_ENTITY_FUNCS_H
+#ifndef MIYUKIRENDERER_LOG_HPP
+#define MIYUKIRENDERER_LOG_HPP
 
+#include <fmt/format.h>
+namespace miyuki::log{
+    void SetLogLevel(int);
 
-#include <memory>
-#include <miyuki.foundation/defs.h>
-#include <nlohmann/json_fwd.hpp>
+    int GetLogLevel();
 
-namespace miyuki {
-    class Object;
-
-    class Type;
-
-    MYK_PUBLIC_API std::shared_ptr<Object> CreateObject(const std::string &type);
-
-    MYK_PUBLIC_API void RegisterObject(const std::string &type, Type *);
-
-    MYK_PUBLIC_API void BindInterfaceImplementation(const std::string &interface, const std::string &alias);
-
-    MYK_PUBLIC_API std::shared_ptr<Object> CreateObjectParams(const nlohmann::json &);
-
-    MYK_PUBLIC_API void BindObject(const std::shared_ptr<Object> &entity, const std::string &name);
-
-    MYK_PUBLIC_API std::shared_ptr<Object> GetObject(const std::string &name);
-
-    template<class T>
-    void Register() {
-        T::_register();
+    template<class... Args>
+    void log(const char *fmt, Args &&...args) {
+        fmt::print(fmt, args...);
     }
 }
-
-#endif //MIYUKIRENDERER_ENTITY_FUNCS_H
+#endif //MIYUKIRENDERER_LOG_HPP

@@ -24,30 +24,30 @@
 #include <miyuki.foundation/math.hpp>
 namespace miyuki {
     template <class T> class TImage {
-        Point2i dimension;
+        ivec2 dimension;
         std::vector<T> texels;
 
       public:
-        TImage(const Point2i &dim) : dimension(dim), texels(dim[0] * dim[1]) {}
+        TImage(const ivec2 &dim) : dimension(dim), texels(dim[0] * dim[1]) {}
 
         const T &operator()(int x, int y) const { return texels[x + y * dimension[0]]; }
         T &operator()(int x, int y) { return texels[x + y * dimension[0]]; }
 
-        const T &operator()(const Point2i &p) const { return (*this)(p.x, p.y); }
-        T &operator()(const Point2i &p) { return (*this)(p.x, p.y); }
+        const T &operator()(const ivec2 &p) const { return (*this)(p.x, p.y); }
+        T &operator()(const ivec2 &p) { return (*this)(p.x, p.y); }
 
-        const T &operator()(const Point2f &p) const { return (*this)(Point2i(p * Point2f(dimension))); }
-        T &operator()(const Point2f &p) { return (*this)(Point2i(p * Point2f(dimension))); }
+        const T &operator()(const vec2 &p) const { return (*this)(ivec2(p * vec2(dimension))); }
+        T &operator()(const vec2 &p) { return (*this)(ivec2(p * vec2(dimension))); }
 
         T *data() { return texels.data(); }
     };
 
-    class RGBImage : public TImage<Vec3f> {
+    class RGBImage : public TImage<vec3> {
       public:
-        using TImage<Vec3f>::TImage;
+        using TImage<vec3>::TImage;
     };
-    class RGBAImage : public TImage<Vec4f> {
-        using TImage<Vec4f>::TImage;
+    class RGBAImage : public TImage<vec4> {
+        using TImage<vec4>::TImage;
     };
 
 } // namespace miyuki

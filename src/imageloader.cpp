@@ -48,20 +48,20 @@ namespace miyuki {
                 int w, h;
                 int comp;
                 auto data = stbi_load(path.string().c_str(), &w, &h, &comp, 3);
-                auto image = std::make_shared<RGBAImage>(Point2i(w, h));
+                auto image = std::make_shared<RGBAImage>(ivec2(w, h));
                 if (comp == 4) {
                     ParallelFor(
                         0, w * h,
                         [&](int i, int threadIdx) {
                             image->data()[i] =
-                                Vec4f(data[4 * i + 0], data[4 * i + 1], data[4 * i + 2], data[4 * i + 3]);
+                                vec4(data[4 * i + 0], data[4 * i + 1], data[4 * i + 2], data[4 * i + 3]);
                         },
                         1024);
                 } else if (comp == 3) {
                     ParallelFor(
                         0, w * h,
                         [&](int i, int threadIdx) {
-                            image->data()[i] = Vec4f(data[3 * i + 0], data[3 * i + 1], data[3 * i + 2], 1);
+                            image->data()[i] = vec4(data[3 * i + 0], data[3 * i + 1], data[3 * i + 2], 1);
                         },
                         1024);
                 } else {
