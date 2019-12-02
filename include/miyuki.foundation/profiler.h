@@ -20,3 +20,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#ifndef MIYUKIRENDERER_PROFILER_H
+#define MIYUKIRENDERER_PROFILER_H
+
+#include <chrono>
+
+
+namespace miyuki {
+    class Profiler {
+        std::chrono::high_resolution_clock::time_point start;
+    public:
+        Profiler() {
+            start = std::chrono::high_resolution_clock::now();
+        }
+
+        template<class T>
+        std::chrono::duration<T> elapsed() const {
+            return std::chrono::high_resolution_clock::now() - start;
+        }
+    };
+}
+
+
+#endif //MIYUKIRENDERER_PROFILER_H
