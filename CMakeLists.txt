@@ -14,5 +14,5 @@ target_include_directories(foundation PUBLIC external/json/include)
 target_include_directories(foundation PUBLIC external/stb)
 target_include_directories(foundation PUBLIC external/fmt/include)
 target_include_directories(foundation PUBLIC external/lodepng)
-
+target_include_directories(foundation PUBLIC external/glfw/include)
 target_link_libraries(foundation glfw fmt)

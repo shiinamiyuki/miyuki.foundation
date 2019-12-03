@@ -31,7 +31,7 @@ namespace miyuki::core {
         vec3 color;
         Float weightSum = 0.0f;
 
-        vec3 eval() const { return weightSum == 0 ? color : vec3(color / weightSum); }
+        [[nodiscard]] vec3 eval() const { return weightSum == 0 ? color : vec3(color / weightSum); }
     };
 
     struct Film {

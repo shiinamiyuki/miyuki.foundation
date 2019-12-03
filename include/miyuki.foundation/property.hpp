@@ -33,28 +33,39 @@ namespace miyuki {
     class Object;
 
     class PropertyIterator {
-      public:
+    public:
         virtual void next(PropertyVisitor *visitor) = 0;
+
         virtual bool hasNext() const = 0;
+
         virtual ~PropertyIterator() = default;
     };
+
     class PropertyVisitor;
+
     class Property : public std::enable_shared_from_this<Property> {
-      public:
+    public:
         virtual void accept(PropertyVisitor *visitor) = 0;
     };
 
     namespace detail {
-        template <class T> class BasicProperty {
+        template<class T>
+        class BasicProperty {
             const char *_name;
             std::reference_wrapper<T> ref;
 
-          public:
+        public:
             BasicProperty(const char *name, T &ref) : _name(name), ref(ref) {}
+
             const T &getConstRef() const { return ref; }
+
             T &getRef() { return ref; }
+
             void set(const T &v) { ref = v; }
-            void accept(PropertyVisitor *visitor) { visitor->visit(this); }
+
+            void accept(PropertyVisitor *visitor);
+
+            //void accept(PropertyVisitor *visitor) { visitor->visit(this); }
             const char *name() const { return _name; }
         };
     } // namespace detail
@@ -67,15 +78,23 @@ namespace miyuki {
     using FileProperty = detail::BasicProperty<fs::path>;
 
     class PropertyVisitor {
-      public:
+    public:
         virtual void visit(Property *prop) { prop->accept(this); }
+
         virtual void visit(IntProperty *) = 0;
+
         virtual void visit(FloatProperty *) = 0;
+
         virtual void visit(Float3Property *) = 0;
+
         virtual void visit(ObjectProperty *) = 0;
+
         virtual void visit(FileProperty *) = 0;
+
         virtual void visit(Int2Property *) = 0;
+
         virtual void visit(Float2Property *) = 0;
+
         virtual void visit(PropertyIterator *iter) {
             iterPrologue(iter);
             while (iter->hasNext()) {
@@ -83,13 +102,22 @@ namespace miyuki {
             }
             iterEpilogue(iter);
         }
+
         virtual void iterPrologue(PropertyIterator *iter) {}
+
         virtual void iterEpilogue(PropertyIterator *iter) {}
     };
-
+    namespace detail {
+        template<class T>
+        void BasicProperty<T>::accept(miyuki::PropertyVisitor *visitor) {
+            visitor->visit(this);
+        }
+    }
     struct ReflPropertyVisitor {
         PropertyVisitor *visitor;
+
         ReflPropertyVisitor(PropertyVisitor *visitor) : visitor(visitor) {}
+
         void visit(int &v, const char *name) {
             IntProperty prop(name, v);
             prop.accept(visitor);
@@ -115,15 +143,16 @@ namespace miyuki {
             prop.accept(visitor);
         }
 
-        template <class T>
+        template<class T>
         std::enable_if_t<std::is_base_of_v<Object, T>, void> visit(std::vector<std::shared_ptr<T>> &v,
                                                                    const char *name) {
             class Iter : public PropertyIterator {
                 std::vector<std::shared_ptr<T>> &vec;
-                std::vector<std::shared_ptr<T>>::iterator iter;
+                typename std::vector<std::shared_ptr<T>>::iterator iter;
 
-              public:
+            public:
                 Iter(std::vector<std::shared_ptr<T>> &vec) : vec(vec) { iter = vec.begin(); }
+
                 void next(PropertyVisitor *visitor) {
                     std::shared_ptr<Object> p = *iter;
                     ObjectProperty prop(name, p);
@@ -137,7 +166,7 @@ namespace miyuki {
             visitor->visit(&iter);
         }
 
-        template <class T>
+        template<class T>
         std::enable_if_t<std::is_base_of_v<Object, T>, void> visit(std::shared_ptr<T> &v, const char *name) {
             std::shared_ptr<Object> p = v;
             ObjectProperty prop(name, p);
@@ -145,6 +174,7 @@ namespace miyuki {
             v = std::dynamic_pointer_cast<T>(p);
         }
     };
+
 #define MYK_PROP(...)                                                                                                  \
     void accept(miyuki::PropertyVisitor *visitor) override {                                                           \
         miyuki::ReflPropertyVisitor refl(visitor);                                                                     \
