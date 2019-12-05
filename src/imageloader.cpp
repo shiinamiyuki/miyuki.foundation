@@ -34,8 +34,9 @@ namespace miyuki {
             fs::file_time_type lastModifiedTime;
         };
 
-      public:
+    public:
         std::unordered_map<std::string, ImageRecord> cached;
+
         std::shared_ptr<RGBAImage> loadRGBAImage(const fs::path &path) {
             auto iter = cached.find(fs::absolute(path).string());
             auto last = fs::last_write_time(path);
@@ -51,22 +52,22 @@ namespace miyuki {
                 auto image = std::make_shared<RGBAImage>(ivec2(w, h));
                 if (comp == 4) {
                     ParallelFor(
-                        0, w * h,
-                        [&](int i, int threadIdx) {
-                            image->data()[i] =
-                                vec4(data[4 * i + 0], data[4 * i + 1], data[4 * i + 2], data[4 * i + 3]);
-                        },
-                        1024);
+                            0, w * h,
+                            [&](int i, int threadIdx) {
+                                image->data()[i] =
+                                        vec4(data[4 * i + 0], data[4 * i + 1], data[4 * i + 2], data[4 * i + 3]);
+                            },
+                            1024);
                 } else if (comp == 3) {
                     ParallelFor(
-                        0, w * h,
-                        [&](int i, int threadIdx) {
-                            image->data()[i] = vec4(data[3 * i + 0], data[3 * i + 1], data[3 * i + 2], 1);
-                        },
-                        1024);
+                            0, w * h,
+                            [&](int i, int threadIdx) {
+                                image->data()[i] = vec4(data[3 * i + 0], data[3 * i + 1], data[3 * i + 2], 1);
+                            },
+                            1024);
                 } else {
                     MIYUKI_NOT_IMPLEMENTED();
-				}
+                }
                 stbi_image_free(data);
                 cached[fs::absolute(path).string()] = ImageRecord{image, last};
                 return image;
@@ -75,7 +76,15 @@ namespace miyuki {
             }
         }
     };
+
     ImageLoader::ImageLoader() : impl(new Impl()) {}
+
     std::shared_ptr<RGBAImage> ImageLoader::loadRGBAImage(const fs::path &path) { return impl->loadRGBAImage(path); }
+
+    static ImageLoader instance;
+
+    ImageLoader *ImageLoader::getInstance() {
+        return &instance;
+    }
 
 } // namespace miyuki

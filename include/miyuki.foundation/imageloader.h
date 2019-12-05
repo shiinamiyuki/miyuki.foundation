@@ -31,5 +31,6 @@ namespace miyuki {
       public:
         ImageLoader();
         std::shared_ptr<RGBAImage> loadRGBAImage(const fs::path &);
+        static ImageLoader* getInstance();
     };
 } // namespace miyuki

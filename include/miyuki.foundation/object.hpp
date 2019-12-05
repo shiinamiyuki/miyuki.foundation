@@ -39,11 +39,12 @@ namespace miyuki {
         class OutputArchive;
     } // namespace serialize
     class Type;
+
     class PropertyVisitor;
 
     // Base class for all entities in rendering
     class Object {
-      public:
+    public:
         [[nodiscard]] virtual Type *getType() const = 0;
 
         virtual void save(serialize::OutputArchive &) const {}
@@ -58,14 +59,14 @@ namespace miyuki {
 
         virtual void accept(PropertyVisitor *) {}
 
-		virtual std::string toString() const;
+        virtual std::string toString() const;
 
-		virtual ~Object() = default;
+        virtual ~Object() = default;
 
-		// get a ObjectProperty from name
-		//virtual std::shared_ptr<Object> getProperty(const char *name);
+        // get a ObjectProperty from name
+        //virtual std::shared_ptr<Object> getProperty(const char *name);
 
-		//virtual void setProperty(const char * name, )
+        //virtual void setProperty(const char * name, )
     };
 
     namespace serialize {
@@ -75,13 +76,16 @@ namespace miyuki {
     } // namespace serialize
 
     class Type {
-      public:
+    public:
         virtual std::shared_ptr<Object> create() const = 0;
 
         virtual const char *name() const = 0;
+
+        virtual bool isInterface()const = 0;
     };
 
-    template <class T> Type *GetStaticType(const char *_name) {
+    template<class T>
+    Type *GetStaticType(const char *_name) {
         struct TypeImpl : Type {
             const char *_name;
 
@@ -90,6 +94,8 @@ namespace miyuki {
             [[nodiscard]] std::shared_ptr<Object> create() const override { return std::make_shared<T>(); }
 
             [[nodiscard]] const char *name() const override { return _name; }
+
+            [[nodiscard]] bool isInterface()const override {return false;}
         };
         static std::once_flag flag;
         static TypeImpl *type = nullptr;
@@ -97,6 +103,30 @@ namespace miyuki {
         return type;
     }
 
+    template<class T>
+    Type *GetAbstraceStaticType(const char *_name) {
+        struct TypeImpl : Type {
+            const char *_name;
 
+            explicit TypeImpl(const char *name) : _name(name) {}
+
+            [[noreturn]] std::shared_ptr<Object> create() const override {
+                MIYUKI_THROW(std::runtime_error, "Cannot create abstract type");
+            }
+
+            [[nodiscard]] const char *name() const override { return _name; }
+
+            [[nodiscard]] bool isInterface()const override {return true;}
+        };
+        static std::once_flag flag;
+        static TypeImpl *type = nullptr;
+        std::call_once(flag, [&]() { type = new TypeImpl(_name); });
+        return type;
+    }
 
 } // namespace miyuki
+
+#define MYK_INTERFACE(Interface, Alias)                                                                                            \
+        using Self = Interface;                                                                                            \
+        static miyuki::Type *staticType() { return miyuki::GetAbstraceStaticType<Self>(Alias); }                           \
+

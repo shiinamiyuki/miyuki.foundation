@@ -20,40 +20,26 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#ifndef MIYUKIRENDERER_ENTITY_FUNCS_H
-#define MIYUKIRENDERER_ENTITY_FUNCS_H
+#ifndef MIYUKIRENDERER_SPECTRUM_H
+#define MIYUKIRENDERER_SPECTRUM_H
 
-
-#include <memory>
 #include <miyuki.foundation/defs.h>
-#include <nlohmann/json_fwd.hpp>
-#include <functional>
+#include <miyuki.foundation/math.hpp>
 
-namespace miyuki {
-    class Object;
+namespace miyuki::core {
 
-    class Type;
+    class RGBSpectrum : public vec3 {
+    public:
+        using vec3::vec3;
 
-    MYK_PUBLIC_API std::shared_ptr<Object> CreateObject(const std::string &type);
+        RGBSpectrum(const vec3 &v) : vec3(v) {}
+    };
 
-    MYK_PUBLIC_API void RegisterObject(const std::string &type, Type *);
+    using Spectrum = RGBSpectrum;
 
-    MYK_PUBLIC_API void BindInterfaceImplementation(const std::string &interface, const std::string &alias);
-
-    MYK_PUBLIC_API std::shared_ptr<Object> CreateObjectParams(const nlohmann::json &);
-
-    MYK_PUBLIC_API void BindObject(const std::shared_ptr<Object> &entity, const std::string &name);
-
-    MYK_PUBLIC_API std::shared_ptr<Object> GetObject(const std::string &name);
-
-    Type * GetType(const std::string &);
-
-    void ForeachImplementation(const std::string& interface,const std::function<void(const std::string & impl)> & f);
-
-    template<class T>
-    void Register() {
-        T::_register();
+    inline bool IsBlack(const Spectrum &s) {
+        return s.x <= 0 || s.y <= 0 || s.z <= 0;
     }
-}
 
-#endif //MIYUKIRENDERER_ENTITY_FUNCS_H
+}
+#endif //MIYUKIRENDERER_SPECTRUM_H

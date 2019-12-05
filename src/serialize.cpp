@@ -57,8 +57,25 @@ namespace miyuki {
             m[interface] = {};
         }
         m[interface].insert(impl);
+        log::log("{} implements {}\n", impl, interface);
     }
 
+    void ForeachImplementation(const std::string &interface, const std::function<void(const std::string &impl)> &f) {
+        auto &m = ObjectManager::instance()->impls;
+        if (m.find(interface) == m.end()) {
+            MIYUKI_THROW(std::out_of_range, "No such interface");
+        }
+        for (const auto &impl:m[interface]) {
+            f(impl);
+        }
+    }
+    Type * GetType(const std::string & type){
+        auto it = ObjectManager::instance()->types.find(type);
+        if (it != ObjectManager::instance()->types.end()) {
+            return it->second;
+        }
+        return nullptr;
+    }
     std::shared_ptr<Object> CreateObject(const std::string &type) {
         auto it = ObjectManager::instance()->types.find(type);
         if (it != ObjectManager::instance()->types.end()) {
@@ -106,7 +123,7 @@ namespace miyuki {
         return wp.lock();
     }
 
-    std::string Object::toString() const { return fmt::format("[{} at {}]", getType()->name(), (void *)this); }
+    std::string Object::toString() const { return fmt::format("[{} at {}]", getType()->name(), (void *) this); }
 
     namespace serialize {
         void WriteObject(serialize::OutputArchive &ar, const std::shared_ptr<Object> &e) { ar(e); }

@@ -27,6 +27,7 @@
 
 #include <miyuki.foundation/defs.h>
 #include <miyuki.foundation/math.hpp>
+#include <miyuki.foundation/spectrum.h>
 #include <miyuki.foundation/reflection-visitor.hpp>
 
 namespace miyuki {
@@ -43,14 +44,14 @@ namespace miyuki {
 
     class PropertyVisitor;
 
-    class Property : public std::enable_shared_from_this<Property> {
+    class Property {
     public:
         virtual void accept(PropertyVisitor *visitor) = 0;
     };
 
     namespace detail {
         template<class T>
-        class BasicProperty {
+        class BasicProperty : public Property {
             const char *_name;
             std::reference_wrapper<T> ref;
 
@@ -63,7 +64,7 @@ namespace miyuki {
 
             void set(const T &v) { ref = v; }
 
-            void accept(PropertyVisitor *visitor);
+            virtual void accept(PropertyVisitor *visitor);
 
             //void accept(PropertyVisitor *visitor) { visitor->visit(this); }
             const char *name() const { return _name; }
@@ -72,10 +73,19 @@ namespace miyuki {
     using IntProperty = detail::BasicProperty<int>;
     using FloatProperty = detail::BasicProperty<float>;
     using Float3Property = detail::BasicProperty<Vec3f>;
+    using RGBProperty = detail::BasicProperty<core::RGBSpectrum>;
     using Float2Property = detail::BasicProperty<Point2f>;
     using Int2Property = detail::BasicProperty<Point2i>;
-    using ObjectProperty = detail::BasicProperty<std::shared_ptr<Object>>;
+
     using FileProperty = detail::BasicProperty<fs::path>;
+
+    class ObjectProperty : public detail::BasicProperty<std::shared_ptr<Object>>{
+    public:
+        using detail::BasicProperty<std::shared_ptr<Object>>::BasicProperty;
+        Type * type = nullptr;
+
+        inline void accept(PropertyVisitor *visitor)override;
+    };
 
     class PropertyVisitor {
     public:
@@ -86,6 +96,8 @@ namespace miyuki {
         virtual void visit(FloatProperty *) = 0;
 
         virtual void visit(Float3Property *) = 0;
+
+        virtual void visit(RGBProperty *) = 0;
 
         virtual void visit(ObjectProperty *) = 0;
 
@@ -113,6 +125,9 @@ namespace miyuki {
             visitor->visit(this);
         }
     }
+    inline void ObjectProperty::accept(miyuki::PropertyVisitor *visitor) {
+        visitor->visit(this);
+    }
     struct ReflPropertyVisitor {
         PropertyVisitor *visitor;
 
@@ -133,6 +148,10 @@ namespace miyuki {
             prop.accept(visitor);
         }
 
+        void visit(core::RGBSpectrum &v, const char *name) {
+            RGBProperty prop(name, v);
+            prop.accept(visitor);
+        }
         void visit(Point2f &v, const char *name) {
             Float2Property prop(name, v);
             prop.accept(visitor);
@@ -149,20 +168,21 @@ namespace miyuki {
             class Iter : public PropertyIterator {
                 std::vector<std::shared_ptr<T>> &vec;
                 typename std::vector<std::shared_ptr<T>>::iterator iter;
-
+                const char *name;
             public:
-                Iter(std::vector<std::shared_ptr<T>> &vec) : vec(vec) { iter = vec.begin(); }
+                Iter(const char *name,std::vector<std::shared_ptr<T>> &vec) : name(name),vec(vec) { iter = vec.begin(); }
 
                 void next(PropertyVisitor *visitor) {
                     std::shared_ptr<Object> p = *iter;
                     ObjectProperty prop(name, p);
                     prop.accept(visitor);
                     *iter = std::dynamic_pointer_cast<T>(p);
+                    iter++;
                 }
 
-                bool hasNext() const { iter != vec.end(); }
+                bool hasNext() const { return iter != vec.end(); }
             };
-            Iter iter(v);
+            Iter iter(name, v);
             visitor->visit(&iter);
         }
 
@@ -170,6 +190,7 @@ namespace miyuki {
         std::enable_if_t<std::is_base_of_v<Object, T>, void> visit(std::shared_ptr<T> &v, const char *name) {
             std::shared_ptr<Object> p = v;
             ObjectProperty prop(name, p);
+            prop.type = T::staticType();
             prop.accept(visitor);
             v = std::dynamic_pointer_cast<T>(p);
         }
