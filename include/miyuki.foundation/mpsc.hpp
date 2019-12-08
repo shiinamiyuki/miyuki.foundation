@@ -98,8 +98,9 @@ namespace miyuki::mpsc {
     struct Receiver;
 
     template<class T>
-    struct channel_t{
-        Sender<T>tx; Receiver<T>rx;
+    struct channel_t {
+        Sender<T> tx;
+        Receiver<T> rx;
     };
 
 
@@ -112,30 +113,35 @@ namespace miyuki::mpsc {
 
         friend class detail::Sender<T>;
 
-        friend  channel_t<T> channel<T>();
+        friend channel_t<T> channel<T>();
 
         template<class... Args>
-        bool send(Args &&...args)const {
+        bool send(Args &&...args) const {
             return sender->channel->send(std::forward<Args>(args)...);
         }
+
+        void close()const { sender = nullptr; }
 
     private:
         Sender() = default;
 
 
-        std::shared_ptr<detail::Sender<T>> sender;
+        mutable std::shared_ptr<detail::Sender<T>> sender;
     };
 
     template<class T>
-    struct Receiver  {
+    struct Receiver {
         friend class detail::Receiver<T>;
 
         friend channel_t<T> channel<T>();
 
-        std::optional<T> recv() const{
+        std::optional<T> recv() const {
             return receiver->channel->recv();
         }
 
+        [[nodiscard]] bool block()const{
+            return receiver->channel->isEmpty();
+        }
     private:
 
 
@@ -162,7 +168,7 @@ namespace miyuki::mpsc {
         Receiver<T> rx;
         rx.receiver = receiver;
 
-        channel_t<T> ch{tx,rx};
+        channel_t<T> ch{tx, rx};
         return std::move(ch);
     }
 }

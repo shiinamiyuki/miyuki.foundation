@@ -33,11 +33,11 @@
 namespace miyuki::core {
     void Film::writeImage(const std::string &filename) {
         std::vector<unsigned char> pixelBuffer;
-        for (const auto &i : pixels) {
-            auto out = i.eval();
-            pixelBuffer.emplace_back(toInt(out[0]));
-            pixelBuffer.emplace_back(toInt(out[1]));
-            pixelBuffer.emplace_back(toInt(out[2]));
+        for (int i = 0; i < width * height; i++) {
+            auto invWeight = pixels.weight[i].r == 0 ? 0.0f : 1.0f / pixels.weight[i].r;
+            pixelBuffer.emplace_back(toInt(pixels.color[i][0] * invWeight));
+            pixelBuffer.emplace_back(toInt(pixels.color[i][1] * invWeight));
+            pixelBuffer.emplace_back(toInt(pixels.color[i][2] * invWeight));
             pixelBuffer.emplace_back(255);
         }
         auto error = lodepng::encode(filename, pixelBuffer, (uint32_t) width, (uint32_t) height);

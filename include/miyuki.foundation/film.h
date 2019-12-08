@@ -27,15 +27,23 @@
 #include <algorithm>
 
 namespace miyuki::core {
-    struct Pixel {
-        vec3 color;
-        Float weightSum = 0.0f;
-
-        [[nodiscard]] vec3 eval() const { return weightSum == 0 ? color : vec3(color / weightSum); }
-    };
 
     struct Film {
-        std::vector<Pixel> pixels;
+        struct Pixels {
+            std::vector<vec4> color;
+            std::vector<vec4> weight;
+
+            explicit Pixels(int s) : color(s), weight(s) {}
+        };
+
+        struct Pixel {
+            vec4 &color;
+            float &weight;
+
+            Pixel(vec4 &color, float &weight) : color(color), weight(weight) {}
+        };
+
+        Pixels pixels;
         const size_t width, height;
 
         explicit Film(const ivec2 &dim) : Film(dim.x, dim.y) {}
@@ -52,28 +60,28 @@ namespace miyuki::core {
             auto f = fopen(filename.c_str(), "w");
             fprintf(f, "P3\n%d %d\n%d\n", width, height, 255);
             for (int i = 0; i < width * height; i++) {
-                auto invWeight = pixels[i].weightSum == 0 ? 0.0f : 1.0f / pixels[i].weightSum;
-                fprintf(f, "%d %d %d ", toInt(pixels[i].color[0] * invWeight), toInt(pixels[i].color[1] * invWeight),
-                        toInt(pixels[i].color[2] * invWeight));
+                auto invWeight = pixels.weight[i].r == 0 ? 0.0f : 1.0f / pixels.weight[i].r;
+                fprintf(f, "%d %d %d ", toInt(pixels.color[i][0] * invWeight), toInt(pixels.color[i][1] * invWeight),
+                        toInt(pixels.color[i][2] * invWeight));
             }
         }
 
         void writeImage(const std::string &filename);
 
-        Pixel &operator()(const vec2 &p) { return (*this)(p.x, p.y); }
+        Pixel operator()(const vec2 &p) { return (*this)(p.x, p.y); }
 
-        Pixel &operator()(float x, float y) {
+        Pixel operator()(float x, float y) {
             int px = clamp<int>(std::lround(x * width), 0, width - 1);
             int py = clamp<int>(std::lround(y * height), 0, height - 1);
-            return pixels.at(px + py * width);
+            return Pixel(pixels.color.at(px + py * width), pixels.weight.at(px + py * width).r);
         }
 
-        Pixel &operator()(int x, int y) { return pixels.at(x + y * width); }
+        Pixel operator()(int px, int py) { return Pixel(pixels.color.at(px + py * width), pixels.weight.at(px + py * width).r); }
 
         void addSample(const vec2 &p, const vec3 &color, Float weight) {
-            auto &pixel = (*this)(p);
-            pixel.color += color * weight;
-            pixel.weightSum += weight;
+            auto pixel = (*this)(p);
+            pixel.color += vec4(color * weight, 0);
+            pixel.weight += weight;
         }
     };
 } // namespace miyuki::core
