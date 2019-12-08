@@ -74,6 +74,16 @@ namespace miyuki {
 
     inline void from_json(const json &j, Transform &transform) { transform = Transform(j.get<mat4>()); }
 
+    inline void to_json(json &j, const TransformManipulator &transform) { j = json::object();
+        j["rotation"] = transform.rotation;
+        j["translation"] = transform.translation;
+    }
+
+    inline void from_json(const json &j, TransformManipulator &transform) {
+        transform.rotation = j.at("rotation").get<vec3>();
+        transform.translation = j.at("translation").get<vec3>();
+    }
+
 } // namespace miyuki
 namespace nlohmann {
     template<typename T>

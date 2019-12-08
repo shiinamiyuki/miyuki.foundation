@@ -27,7 +27,7 @@
 #include <nlohmann/json_fwd.hpp>
 #include <xmmintrin.h>
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
 #include <cmath>
 
 
@@ -71,7 +71,7 @@ namespace miyuki {
 
         [[nodiscard]] vec3 transformPoint3(const vec3 &v) const {
             auto x = T * vec4(v, 1);
-            if(x.w == 1){
+            if (x.w == 1) {
                 return x;
             }
             return vec3(x) / x.w;
@@ -79,6 +79,21 @@ namespace miyuki {
 
         [[nodiscard]] vec3 transformNormal3(const vec3 &v) const {
             return invT3T * v;
+        }
+    };
+
+    class TransformManipulator {
+    public:
+        vec3 rotation;
+        vec3 translation;
+
+        [[nodiscard]] Transform toTransform() const {
+            mat4 m = identity<mat4>();
+            m = rotate(rotation.z, Vec3f(0, 0, 1)) * m;
+            m = rotate(rotation.y, Vec3f(1, 0, 0)) * m;
+            m = rotate(rotation.x, Vec3f(0, 1, 0)) * m;
+            m = glm::translate(translation) * m;
+            return Transform(m);
         }
     };
 
@@ -164,28 +179,28 @@ namespace miyuki {
     }
 
     template<class T>
-    T lerp(const T &x,const T &y,const T &a){
+    T lerp(const T &x, const T &y, const T &a) {
         return x * T(1.0f - a) + y * a;
     }
 } // namespace miyuki
 
 namespace cereal {
-    template <typename Archive, int N, typename T, glm::qualifier Q>
-    void serialize(Archive& ar, glm::vec<N, T, Q>& v) {
+    template<typename Archive, int N, typename T, glm::qualifier Q>
+    void serialize(Archive &ar, glm::vec<N, T, Q> &v) {
         for (int i = 0; i < N; i++) {
             ar(v[i]);
         }
     }
 
-    template <typename Archive, int C, int R, typename T, glm::qualifier Q>
-    void serialize(Archive& ar, glm::mat<C, R, T, Q>& v) {
+    template<typename Archive, int C, int R, typename T, glm::qualifier Q>
+    void serialize(Archive &ar, glm::mat<C, R, T, Q> &v) {
         for (int i = 0; i < C; i++) {
             ar(v[i]);
         }
     }
 
 }
-namespace cereal{
+namespace cereal {
     template<class Archive>
     void save(Archive &ar, const miyuki::Transform &m) { ar(m.matrix()); }
 
@@ -194,6 +209,14 @@ namespace cereal{
         glm::mat4 matrix4;
         ar(matrix4);
         m = miyuki::Transform(matrix4);
+    }
+
+    template<class Archive>
+    void save(Archive &ar, const miyuki::TransformManipulator &m) { ar(m.translation,m.rotation); }
+
+    template<class Archive>
+    void load(Archive &ar, miyuki::TransformManipulator &m) {
+        ar(m.translation,m.rotation);
     }
 } // namespace cereal
 

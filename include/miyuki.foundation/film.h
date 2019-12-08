@@ -38,6 +38,8 @@ namespace miyuki::core {
         std::vector<Pixel> pixels;
         const size_t width, height;
 
+        explicit Film(const ivec2 &dim) : Film(dim.x, dim.y) {}
+
         Film(size_t w, size_t h) : width(w), height(h), pixels(w * h) {}
 
         static float gamma(float x, float k = 1.0f / 2.2f) { return std::pow(clamp(x, 0.0f, 1.0f), k); }

@@ -70,6 +70,7 @@ namespace miyuki {
             const char *name() const { return _name; }
         };
     } // namespace detail
+    using BoolProperty = detail::BasicProperty<bool>;
     using IntProperty = detail::BasicProperty<int>;
     using FloatProperty = detail::BasicProperty<float>;
     using Float3Property = detail::BasicProperty<Vec3f>;
@@ -79,17 +80,19 @@ namespace miyuki {
 
     using FileProperty = detail::BasicProperty<fs::path>;
 
-    class ObjectProperty : public detail::BasicProperty<std::shared_ptr<Object>>{
+    class ObjectProperty : public detail::BasicProperty<std::shared_ptr<Object>> {
     public:
         using detail::BasicProperty<std::shared_ptr<Object>>::BasicProperty;
-        Type * type = nullptr;
+        Type *type = nullptr;
 
-        inline void accept(PropertyVisitor *visitor)override;
+        inline void accept(PropertyVisitor *visitor) override;
     };
 
     class PropertyVisitor {
     public:
         virtual void visit(Property *prop) { prop->accept(this); }
+
+        virtual void visit(BoolProperty *) = 0;
 
         virtual void visit(IntProperty *) = 0;
 
@@ -125,16 +128,23 @@ namespace miyuki {
             visitor->visit(this);
         }
     }
+
     inline void ObjectProperty::accept(miyuki::PropertyVisitor *visitor) {
         visitor->visit(this);
     }
+
     struct ReflPropertyVisitor {
         PropertyVisitor *visitor;
 
-        ReflPropertyVisitor(PropertyVisitor *visitor) : visitor(visitor) {}
+        explicit ReflPropertyVisitor(PropertyVisitor *visitor) : visitor(visitor) {}
 
         void visit(int &v, const char *name) {
             IntProperty prop(name, v);
+            prop.accept(visitor);
+        }
+
+        void visit(bool &v, const char *name) {
+            BoolProperty prop(name, v);
             prop.accept(visitor);
         }
 
@@ -152,6 +162,12 @@ namespace miyuki {
             RGBProperty prop(name, v);
             prop.accept(visitor);
         }
+
+        void visit(TransformManipulator &transform, const char *name) {
+            visit(transform.translation, "translation");
+            visit(transform.rotation, "rotation");
+        }
+
         void visit(Point2f &v, const char *name) {
             Float2Property prop(name, v);
             prop.accept(visitor);
@@ -170,7 +186,8 @@ namespace miyuki {
                 typename std::vector<std::shared_ptr<T>>::iterator iter;
                 const char *name;
             public:
-                Iter(const char *name,std::vector<std::shared_ptr<T>> &vec) : name(name),vec(vec) { iter = vec.begin(); }
+                Iter(const char *name, std::vector<std::shared_ptr<T>> &vec) : name(name),
+                                                                               vec(vec) { iter = vec.begin(); }
 
                 void next(PropertyVisitor *visitor) {
                     std::shared_ptr<Object> p = *iter;

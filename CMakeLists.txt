@@ -6,7 +6,7 @@ add_subdirectory(external/fmt)
 add_subdirectory(external/glfw)
 
 file(GLOB libSRC src/*.* src/*/*.* include/*/*.*)
-add_library(foundation ${libSRC} external/lodepng/lodepng.cpp external/lodepng/lodepng_util.cpp)
+add_library(foundation ${libSRC} external/lodepng/lodepng.cpp external/lodepng/lodepng_util.cpp include/miyuki.foundation/mpsc.hpp)
 target_include_directories(foundation PUBLIC include/)
 target_include_directories(foundation PUBLIC external/cereal/include)
 target_include_directories(foundation PUBLIC external/glm)
