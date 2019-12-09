@@ -29,7 +29,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
 #include <cmath>
-
+#include <miyuki.foundation/defs.h>
 
 namespace miyuki {
     using Float = float;
@@ -40,6 +40,49 @@ namespace miyuki {
     using Point2f = vec2;
     using Point2i = ivec2;
     using Point3i = ivec3;
+
+    template<class T>
+    struct Radians;
+
+    template<class T>
+    struct Degrees {
+        Degrees() = default;
+        explicit Degrees(T v) : value(v) {}
+
+        explicit operator T() const {
+            return value;
+        }
+
+        inline explicit Degrees(const Radians<T> &);
+
+        T &get() { return value; }
+
+        const T &get() const { return value; }
+
+    private:
+        T value = T();
+    };
+
+    template<class T>
+    struct Radians {
+        Radians()= default;
+        explicit Radians(T v) : value(v) {}
+
+        explicit Radians(const Degrees<T> &degrees) {
+            value = DegreesToRadians(T(degrees));
+        }
+
+        explicit operator T() const {
+            return value;
+        }
+
+        T &get() { return value; }
+
+        [[nodiscard]] const T &get() const { return value; }
+
+    private:
+        T value = T();
+    };
 
     class Transform {
         mat4 T, invT;
@@ -84,18 +127,25 @@ namespace miyuki {
 
     class TransformManipulator {
     public:
-        vec3 rotation;
+        Radians<vec3> rotation;
         vec3 translation;
 
         [[nodiscard]] Transform toTransform() const {
             mat4 m = identity<mat4>();
-            m = rotate(rotation.z, Vec3f(0, 0, 1)) * m;
-            m = rotate(rotation.y, Vec3f(1, 0, 0)) * m;
-            m = rotate(rotation.x, Vec3f(0, 1, 0)) * m;
+            m = rotate(rotation.get().z, Vec3f(0, 0, 1)) * m;
+            m = rotate(rotation.get().y, Vec3f(1, 0, 0)) * m;
+            m = rotate(rotation.get().x, Vec3f(0, 1, 0)) * m;
             m = glm::translate(translation) * m;
             return Transform(m);
         }
     };
+
+
+
+    template<class T>
+    inline Degrees<T>::Degrees(const miyuki::Radians<T> &r) {
+        value = RadiansToDegrees(T(r));
+    }
 
     inline void ComputeLocalFrame(const Vec3f &v1, Vec3f *v2, Vec3f *v3) {
         if (std::abs(v1.x) > std::abs(v1.y))
@@ -110,9 +160,13 @@ namespace miyuki {
 
         explicit CoordinateSystem(const Vec3f &v) : normal(v) { ComputeLocalFrame(v, &localX, &localZ); }
 
-        Vec3f worldToLocal(const Vec3f &v) const { return Vec3f(dot(localX, v), dot(normal, v), dot(localZ, v)); }
+        [[nodiscard]] Vec3f worldToLocal(const Vec3f &v) const {
+            return Vec3f(dot(localX, v), dot(normal, v), dot(localZ, v));
+        }
 
-        Vec3f localToWorld(const Vec3f &v) const { return Vec3f(v.x * localX + v.y * normal + v.z * localZ); }
+        [[nodiscard]] Vec3f localToWorld(const Vec3f &v) const {
+            return Vec3f(v.x * localX + v.y * normal + v.z * localZ);
+        }
 
     private:
         Vec3f normal;
@@ -199,6 +253,16 @@ namespace cereal {
         }
     }
 
+    template<class Archive, class T>
+    void serialize(Archive &ar, miyuki::Degrees<T> &v) {
+        ar(v.get());
+    }
+
+    template<class Archive, class T>
+    void serialize(Archive &ar, miyuki::Radians<T> &v) {
+        ar(v.get());
+    }
+
 }
 namespace cereal {
     template<class Archive>
@@ -212,11 +276,11 @@ namespace cereal {
     }
 
     template<class Archive>
-    void save(Archive &ar, const miyuki::TransformManipulator &m) { ar(m.translation,m.rotation); }
+    void save(Archive &ar, const miyuki::TransformManipulator &m) { ar(m.translation, m.rotation); }
 
     template<class Archive>
     void load(Archive &ar, miyuki::TransformManipulator &m) {
-        ar(m.translation,m.rotation);
+        ar(m.translation, m.rotation);
     }
 } // namespace cereal
 

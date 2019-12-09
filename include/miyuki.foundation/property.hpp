@@ -138,6 +138,19 @@ namespace miyuki {
 
         explicit ReflPropertyVisitor(PropertyVisitor *visitor) : visitor(visitor) {}
 
+
+        template<class T>
+        void visit(Degrees<T> &degrees, const char *name) {
+            visit(degrees.get(), name);
+        }
+
+        template<class T>
+        void visit(Radians<T> &radians, const char *name) {
+            Degrees<T> degrees(radians);
+            visit(degrees, name);
+            radians = Radians<T>(degrees);
+        }
+
         void visit(int &v, const char *name) {
             IntProperty prop(name, v);
             prop.accept(visitor);

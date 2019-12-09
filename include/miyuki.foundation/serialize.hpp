@@ -42,7 +42,7 @@ namespace glm {
     using json = nlohmann::json;
 
     template<int N, typename T, qualifier Q>
-    inline void to_json(json &j, const vec<N, T, Q> &v) {
+    inline void to_json(json &j, const vec <N, T, Q> &v) {
         j = json::array();
         for (int i = 0; i < N; i++) {
             j[i] = v[i];
@@ -50,7 +50,7 @@ namespace glm {
     }
 
     template<int N, typename T, qualifier Q>
-    inline void from_json(const json &j, vec<N, T, Q> &v) {
+    inline void from_json(const json &j, vec <N, T, Q> &v) {
         for (int i = 0; i < N; i++) {
             v[i] = j[i];
         }
@@ -74,13 +74,35 @@ namespace miyuki {
 
     inline void from_json(const json &j, Transform &transform) { transform = Transform(j.get<mat4>()); }
 
-    inline void to_json(json &j, const TransformManipulator &transform) { j = json::object();
+
+    template<class T>
+    void to_json(json &j, const Degrees <T> &v) {
+        j = v.get();
+    }
+
+    template<class T>
+    void to_json(json &j, const Radians <T> &v) {
+        j = Degrees<T>(v).get();
+    }
+
+    template<class T>
+    void from_json(const json &j, Degrees <T> &v) {
+        v.get() = j.get<T>();
+    }
+
+    template<class T>
+    void from_json(const json &j, Radians <T> &v) {
+        v = Radians<T>(j.get<Degrees<T>>());
+    }
+
+    inline void to_json(json &j, const TransformManipulator &transform) {
+        j = json::object();
         j["rotation"] = transform.rotation;
         j["translation"] = transform.translation;
     }
 
     inline void from_json(const json &j, TransformManipulator &transform) {
-        transform.rotation = j.at("rotation").get<vec3>();
+        transform.rotation = j.at("rotation").get< Radians<vec3>>();
         transform.translation = j.at("translation").get<vec3>();
     }
 
