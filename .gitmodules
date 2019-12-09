@@ -19,3 +19,9 @@
 [submodule "external/lodepng"]
 	path = external/lodepng
 	url = https://github.com/lvandeve/lodepng
+[submodule "external/asio"]
+	path = external/asio
+	url = https://github.com/chriskohlhoff/asio
+[submodule "external/openexr"]
+	path = external/openexr
+	url = https://github.com/AcademySoftwareFoundation/openexr
