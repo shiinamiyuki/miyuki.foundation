@@ -16,3 +16,7 @@ target_include_directories(foundation PUBLIC external/fmt/include)
 target_include_directories(foundation PUBLIC external/lodepng)
 target_include_directories(foundation PUBLIC external/glfw/include)
 target_link_libraries(foundation glfw fmt)
+
+add_library(asio external/asio/asio/src/asio.cpp)
+target_include_directories(asio PUBLIC external/asio/asio/include/)
+target_compile_definitions(asio PUBLIC ASIO_SEPARATE_COMPILATION)
