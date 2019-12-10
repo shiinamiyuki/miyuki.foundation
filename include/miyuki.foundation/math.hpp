@@ -208,6 +208,8 @@ namespace miyuki {
     };
 
     using Bounds3f = BoundBox<3, float, qualifier::defaultp>;
+    using Bounds2i = BoundBox<2, int, qualifier ::defaultp>;
+    using Bounds2f = BoundBox<2, float, qualifier ::defaultp>;
 
     template<class T>
     T lerp3(const T &v1, const T &v2, const T &v3, float u, float v) {
@@ -235,6 +237,29 @@ namespace miyuki {
     template<class T>
     T lerp(const T &x, const T &y, const T &a) {
         return x * T(1.0f - a) + y * a;
+    }
+
+    // finds the smallest i such that pred(i) is false
+    template <typename Predicate>
+    int FindInterval(int begin, int end, const Predicate &pred) {
+        int lo = begin;
+        int hi = end - 1;
+        while(lo <= hi){
+            int m = (lo + hi) / 2;
+            if(m - 1 < 0 || pred(m - 1 ) && !pred(m)){
+                return m;
+            }
+            if(pred(m)){
+                lo = m + 1;
+            }else{
+                hi = m - 1;
+            }
+        }
+        return lo;
+    }
+
+    inline vec3 FaceForward(const vec3& v, const vec3 & n){
+        return dot(v, n) < 0 ? -v : v;
     }
 } // namespace miyuki
 

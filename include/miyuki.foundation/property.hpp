@@ -202,15 +202,16 @@ namespace miyuki {
                 Iter(const char *name, std::vector<std::shared_ptr<T>> &vec) : name(name),
                                                                                vec(vec) { iter = vec.begin(); }
 
-                void next(PropertyVisitor *visitor) {
+                void next(PropertyVisitor *visitor) override {
                     std::shared_ptr<Object> p = *iter;
                     ObjectProperty prop(name, p);
+                    prop.type = T::staticType();
                     prop.accept(visitor);
                     *iter = std::dynamic_pointer_cast<T>(p);
                     iter++;
                 }
 
-                bool hasNext() const { return iter != vec.end(); }
+                [[nodiscard]] bool hasNext() const override { return iter != vec.end(); }
             };
             Iter iter(name, v);
             visitor->visit(&iter);

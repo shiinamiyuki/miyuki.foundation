@@ -20,31 +20,40 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <miyuki.foundation/film.h>
+#ifndef MIYUKIRENDERER_ARRAY_HPP
+#define MIYUKIRENDERER_ARRAY_HPP
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
+namespace miyuki {
+    template<class T>
+    class Array {
+        T *data = nullptr;
+    public:
+        const size_t length;
 
-#include <stb_image.h>
-#include <stb_image_write.h>
-#include <lodepng.h>
-#include <miyuki.foundation/log.hpp>
+        Array(T *data, size_t N) : data(data)
 
-namespace miyuki::core {
-    void Film::writeImage(const std::string &filename) {
-        std::vector<unsigned char> pixelBuffer;
-        for (int i = 0; i < width * height; i++) {
-            auto invWeight = weight.data()[i].r == 0 ? 0.0f : 1.0f / weight.data()[i].r;
-            pixelBuffer.emplace_back(toInt(color.data()[i][0] * invWeight));
-            pixelBuffer.emplace_back(toInt(color.data()[i][1] * invWeight));
-            pixelBuffer.emplace_back(toInt(color.data()[i][2] * invWeight));
-            pixelBuffer.emplace_back(255);
+        length(N) {}
+
+        T &operator[](size_t i) {
+            return data[i];
         }
-        auto error = lodepng::encode(filename, pixelBuffer, (uint32_t) width, (uint32_t) height);
-        if (error) {
-            log::log("error saving {}: {}\n", filename, lodepng_error_text(error));
-        } else {
-            log::log("saved to {}\n", filename);
+
+        const T &operator[](size_t i) const {
+            return data[i];
         }
-    }
+
+        size_t size() const { return length; }
+
+        T *begin() { return data; }
+
+        const T *begin() const { return data; }
+
+        T *end() { return data + size; }
+
+        const T *end() const { return data + size; }
+
+    };
+
 }
+
+#endif //MIYUKIRENDERER_ARRAY_HPP
