@@ -263,50 +263,5 @@ namespace miyuki {
     }
 } // namespace miyuki
 
-namespace cereal {
-    template<typename Archive, int N, typename T, glm::qualifier Q>
-    void serialize(Archive &ar, glm::vec<N, T, Q> &v) {
-        for (int i = 0; i < N; i++) {
-            ar(v[i]);
-        }
-    }
-
-    template<typename Archive, int C, int R, typename T, glm::qualifier Q>
-    void serialize(Archive &ar, glm::mat<C, R, T, Q> &v) {
-        for (int i = 0; i < C; i++) {
-            ar(v[i]);
-        }
-    }
-
-    template<class Archive, class T>
-    void serialize(Archive &ar, miyuki::Degrees<T> &v) {
-        ar(v.get());
-    }
-
-    template<class Archive, class T>
-    void serialize(Archive &ar, miyuki::Radians<T> &v) {
-        ar(v.get());
-    }
-
-}
-namespace cereal {
-    template<class Archive>
-    void save(Archive &ar, const miyuki::Transform &m) { ar(m.matrix()); }
-
-    template<class Archive>
-    void load(Archive &ar, miyuki::Transform &m) {
-        glm::mat4 matrix4;
-        ar(matrix4);
-        m = miyuki::Transform(matrix4);
-    }
-
-    template<class Archive>
-    void save(Archive &ar, const miyuki::TransformManipulator &m) { ar(m.translation, m.rotation); }
-
-    template<class Archive>
-    void load(Archive &ar, miyuki::TransformManipulator &m) {
-        ar(m.translation, m.rotation);
-    }
-} // namespace cereal
 
 #endif // MIYUKIRENDERER_MATH_HPP

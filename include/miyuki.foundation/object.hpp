@@ -63,6 +63,8 @@ namespace miyuki {
 
         virtual ~Object() = default;
 
+        virtual void _generateSchema(json &schema)const;
+
         // get a ObjectProperty from name
         //virtual std::shared_ptr<Object> getProperty(const char *name);
 
@@ -126,7 +128,22 @@ namespace miyuki {
 
 } // namespace miyuki
 
-#define MYK_INTERFACE(Interface, Alias)                                                                                            \
+#define MYK_INTERFACE(Interface, Alias)                                                                                    \
         using Self = Interface;                                                                                            \
         static miyuki::Type *staticType() { return miyuki::GetAbstraceStaticType<Self>(Alias); }                           \
+
+#define MYK_DECL_CLASS(Classname, Alias, ...)                                                                          \
+    using Self = Classname;                                                                                            \
+    static miyuki::Type *staticType() { return miyuki::GetStaticType<Self>(Alias); }                                   \
+    miyuki::Type *getType() const override { return staticType(); }                                                    \
+    static void _register() {                                                                                          \
+        static_assert(std::is_final_v<Self>, Alias " must be final");                                                  \
+        miyuki::RegisterObject(Alias, staticType());                                                                   \
+        std::string interface;                                                                                         \
+        miyuki::serialize::_assign(__VA_ARGS__);                                                                       \
+        if (!interface.empty()) {                                                                                      \
+            miyuki::BindInterfaceImplementation(interface, Alias);                                                     \
+        }                                                                                                              \
+    }
+
 

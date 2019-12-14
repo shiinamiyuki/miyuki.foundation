@@ -69,13 +69,15 @@ namespace miyuki {
             f(impl);
         }
     }
-    Type * GetType(const std::string & type){
+
+    Type *GetType(const std::string &type) {
         auto it = ObjectManager::instance()->types.find(type);
         if (it != ObjectManager::instance()->types.end()) {
             return it->second;
         }
         return nullptr;
     }
+
     std::shared_ptr<Object> CreateObject(const std::string &type) {
         auto it = ObjectManager::instance()->types.find(type);
         if (it != ObjectManager::instance()->types.end()) {
@@ -134,4 +136,21 @@ namespace miyuki {
             return e;
         }
     } // namespace serialize
+
+
+    void DumpJsonSchema(json &schema) {
+
+        schema = {
+                {"$schema",     "http://json-schema.org/draft-07/schema#"},
+                {"definitions", json::object()}
+        };
+        auto &mgr = *ObjectManager::instance();
+        auto &defs = schema["definitions"];
+        for (auto &kv:mgr.types) {
+            auto tmp = kv.second->create();
+            defs[kv.second->name()] = {};
+            tmp->_generateSchema(defs[kv.second->name()]);
+        }
+    }
+    void Object::_generateSchema(miyuki::json & schema) const {schema = json::object();}
 } // namespace miyuki

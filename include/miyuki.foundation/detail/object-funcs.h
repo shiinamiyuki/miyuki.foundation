@@ -28,6 +28,7 @@
 #include <miyuki.foundation/defs.h>
 #include <nlohmann/json_fwd.hpp>
 #include <functional>
+#include <miyuki.foundation/object.hpp>
 
 namespace miyuki {
     class Object;
@@ -49,6 +50,8 @@ namespace miyuki {
     Type * GetType(const std::string &);
 
     void ForeachImplementation(const std::string& interface,const std::function<void(const std::string & impl)> & f);
+
+    void DumpJsonSchema(nlohmann::json& schema);
 
     template<class T>
     void Register() {

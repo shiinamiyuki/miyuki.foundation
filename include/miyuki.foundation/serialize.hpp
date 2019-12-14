@@ -29,6 +29,7 @@
 #include <cereal/archives/json.hpp>
 #include <cereal/cereal.hpp>
 #include <cereal/details/static_object.hpp>
+#include <cereal/types//vector.hpp>
 #include <nlohmann/json.hpp>
 #include <unordered_set>
 
@@ -76,22 +77,22 @@ namespace miyuki {
 
 
     template<class T>
-    void to_json(json &j, const Degrees <T> &v) {
+    void to_json(json &j, const Degrees<T> &v) {
         j = v.get();
     }
 
     template<class T>
-    void to_json(json &j, const Radians <T> &v) {
+    void to_json(json &j, const Radians<T> &v) {
         j = Degrees<T>(v).get();
     }
 
     template<class T>
-    void from_json(const json &j, Degrees <T> &v) {
+    void from_json(const json &j, Degrees<T> &v) {
         v.get() = j.get<T>();
     }
 
     template<class T>
-    void from_json(const json &j, Radians <T> &v) {
+    void from_json(const json &j, Radians<T> &v) {
         v = Radians<T>(j.get<Degrees<T>>());
     }
 
@@ -102,7 +103,7 @@ namespace miyuki {
     }
 
     inline void from_json(const json &j, TransformManipulator &transform) {
-        transform.rotation = j.at("rotation").get< Radians<vec3>>();
+        transform.rotation = j.at("rotation").get<Radians<vec3>>();
         transform.translation = j.at("translation").get<vec3>();
     }
 
@@ -178,11 +179,11 @@ namespace cereal {
     inline void save(Archive &ar, std::shared_ptr<T> const &p) {
         // using Archive = kaede::OutputArchive;
         if (!p) {
-            ar(CEREAL_NVP_("#valid", 0));
+            ar(CEREAL_NVP_("valid", 0));
         } else {
 
-            ar(CEREAL_NVP_("#type", std::string(p->getType()->name())));
-            ar(CEREAL_NVP_("#addr", reinterpret_cast<size_t>(static_cast<miyuki::Object *>(p.get()))));
+            ar(CEREAL_NVP_("type", std::string(p->getType()->name())));
+            ar(CEREAL_NVP_("addr", reinterpret_cast<size_t>(static_cast<miyuki::Object *>(p.get()))));
             auto _archive = dynamic_cast<miyuki::serialize::OutputArchive *>(&ar);
             if (!_archive) {
                 MIYUKI_THROW(std::runtime_error, "Archive must be of OutputArchive");
@@ -191,24 +192,24 @@ namespace cereal {
             if (!archive.hasSerialized(p)) {
                 archive.addSerialized(p);
                 p->save(archive);
-                ar(CEREAL_NVP_("#valid", 2));
+                ar(CEREAL_NVP_("valid", 2));
             } else {
-                ar(CEREAL_NVP_("#valid", 1));
+                ar(CEREAL_NVP_("valid", 1));
             }
         }
     }
 
     template<class Archive, class T>
     inline void load(Archive &ar, std::shared_ptr<T> &p) {
-        int32_t valid;
-        ar(CEREAL_NVP_("#valid", valid));
+        int32_t valid = 2;
+        ar(CEREAL_NVP_("valid", valid));
         if (!valid) {
             p = nullptr;
         } else {
             size_t addr;
-            ar(CEREAL_NVP_("#addr", addr));
+            ar(CEREAL_NVP_("addr", addr));
             std::string type;
-            ar(CEREAL_NVP_("#type", type));
+            ar(CEREAL_NVP_("type", type));
             auto _archive = dynamic_cast<miyuki::serialize::InputArchive *>(&ar);
             if (!_archive) {
                 MIYUKI_THROW(std::runtime_error, "Archive must be of InputArchive");
@@ -234,11 +235,11 @@ namespace cereal {
     inline void save(Archive &ar, std::weak_ptr<T> const &p) {
         // using Archive = kaede::OutputArchive;
         if (!p) {
-            ar(CEREAL_NVP_("#valid", 0));
+            ar(CEREAL_NVP_("valid", 0));
         } else {
 
-            ar(CEREAL_NVP_("#type", std::string(p->getType()->name())));
-            ar(CEREAL_NVP_("#addr", reinterpret_cast<size_t>(static_cast<miyuki::Object *>(p.get()))));
+            ar(CEREAL_NVP_("type", std::string(p->getType()->name())));
+            ar(CEREAL_NVP_("addr", reinterpret_cast<size_t>(static_cast<miyuki::Object *>(p.get()))));
             auto _archive = dynamic_cast<miyuki::serialize::OutputArchive *>(&ar);
             if (!_archive) {
                 MIYUKI_THROW(std::runtime_error, "Archive must be of OutputArchive");
@@ -247,24 +248,24 @@ namespace cereal {
             if (!archive.hasSerialized(p)) {
                 archive.addSerialized(p);
                 p->save(archive);
-                ar(CEREAL_NVP_("#valid", 2));
+                ar(CEREAL_NVP_("valid", 2));
             } else {
-                ar(CEREAL_NVP_("#valid", 1));
+                ar(CEREAL_NVP_("valid", 1));
             }
         }
     }
 
     template<class Archive, class T>
     inline void load(Archive &ar, std::weak_ptr<T> &p) {
-        int32_t valid;
-        ar(CEREAL_NVP_("#valid", valid));
+        int32_t valid = 2;
+        ar(CEREAL_NVP_("valid", valid));
         if (!valid) {
             p = nullptr;
         } else {
             size_t addr;
-            ar(CEREAL_NVP_("#addr", addr));
+            ar(CEREAL_NVP_("addr", addr));
             std::string type;
-            ar(CEREAL_NVP_("#type", type));
+            ar(CEREAL_NVP_("type", type));
             auto _archive = dynamic_cast<miyuki::serialize::InputArchive *>(&ar);
             if (!_archive) {
                 MIYUKI_THROW(std::runtime_error, "Archive must be of InputArchive");
@@ -312,10 +313,160 @@ namespace miyuki::serialize {
         void visit(const T &v, const char *name) { cereal::safe_apply(ar, name, v); }
     };
 
+    namespace detail {
+        template<class T, typename _=void>
+        struct JsonSchemaGenerator {
+        };
+
+        template<>
+        struct JsonSchemaGenerator<bool> {
+            static void generate(json &schema) {
+                schema["type"] = "boolean";
+            }
+        };
+
+        template<>
+        struct JsonSchemaGenerator<int> {
+            static void generate(json &schema) {
+                schema["type"] = "integer";
+            }
+        };
+
+        template<>
+        struct JsonSchemaGenerator<float> {
+            static void generate(json &schema) {
+                schema["type"] = "number";
+            }
+        };
+
+        template<>
+        struct JsonSchemaGenerator<std::string> {
+            static void generate(json &schema) {
+                schema["type"] = "string";
+            }
+        };
+
+        template<class T>
+        struct JsonSchemaGenerator<
+                std::vector<T>
+        > {
+            static void generate(json &schema) {
+                schema["type"] = "array";
+                schema["items"] = json::object();
+                JsonSchemaGenerator<T>::generate(schema["items"]);
+            }
+        };
+
+        template<class T>
+        struct JsonSchemaGenerator<
+                std::unordered_map<std::string, T>
+        > {
+            static void generate(json &schema) {
+                schema["type"] = "object";
+                schema["additionalProperties"] = json::object();
+                JsonSchemaGenerator<T>::generate(schema["additionalProperties"]);
+            }
+        };
+
+
+        template<class T>
+        struct JsonSchemaGenerator<Degrees<T>> {
+            static void generate(json &schema) {
+                schema["type"] = "object";
+                schema["degrees"] = json::object();
+                JsonSchemaGenerator<T>::generate(schema["degrees"]);
+            }
+        };
+
+        template<class T>
+        struct JsonSchemaGenerator<Radians<T>> {
+            static void generate(json &schema) {
+                schema["type"] = "object";
+                schema["radians"] = json::object();
+                JsonSchemaGenerator<T>::generate(schema["degrees"]);
+            }
+        };
+
+        template<class T>
+        struct JsonSchemaGenerator<std::shared_ptr<T>, std::enable_if_t<std::is_base_of_v<Object, T>, void>> {
+            static void generate(json &schema) {
+                schema["type"] = "object";
+                schema["properties"] = {};
+                schema["properties"]["type"] = {
+                        {"type", "string"}
+                };
+                schema["properties"]["valid"] = {
+                        {"type", "integer"}
+                };
+                schema["properties"]["addr"] = {
+                        {"type", "integer"}
+                };
+                schema["properties"]["data"] ={};
+                auto type = T::staticType();
+                if (type->isInterface()) {
+                    // any of its subtypes
+                    schema["properties"]["data"] = {{"anyOf", json::array()}};
+                    json &anyOf = schema["properties"]["data"]["anyOf"];
+                    ForeachImplementation(type->name(), [&](const std::string &impl) {
+                        anyOf.emplace_back(json::object({{"$ref", std::string("#/definitions/").append(impl)}}));
+                    });
+                } else {
+                    // non interface
+                    schema["properties"]["data"] = {
+                            {"$ref", std::string("#/definitions/").append(type->name())},
+                    };
+                }
+            }
+        };
+
+        template<int N, class T, glm::qualifier Q>
+        struct JsonSchemaGenerator<
+                glm::vec<N, T, Q>
+        > {
+            static void generate(json &schema) {
+                schema["type"] = "array";
+                schema["items"] = json::object();
+                JsonSchemaGenerator<T>::generate(schema["items"]);
+            }
+        };
+
+        template<>
+        struct JsonSchemaGenerator<TransformManipulator> {
+            static void generate(json &schema) {
+                schema["type"] = "object";
+                schema["properties"] = {};
+                schema["properties"]["rotation"] = {};
+                schema["properties"]["translation"] = {};
+                JsonSchemaGenerator<decltype(TransformManipulator::translation)>::generate(
+                        schema["properties"]["translation"]);
+                JsonSchemaGenerator<decltype(TransformManipulator::rotation)>::generate(
+                        schema["properties"]["rotation"]);
+            }
+        };
+
+    }
+
+
+    struct JsonSchemaGeneratorVisitor {
+        json &schema;
+
+        explicit JsonSchemaGeneratorVisitor(json &schema) : schema(schema) {
+            schema["properties"] = {};
+            schema["type"] = "object";
+        }
+
+        template<class T>
+        void visit(const T &v, const char *name) {
+            schema["properties"][name] = {};
+            detail::JsonSchemaGenerator<T>::generate(schema["properties"][name]);
+        }
+
+    };
+
     struct InitializeVisitor {
         const json &params;
 
-        InitializeVisitor(const json &params) : params(params) {}
+        explicit InitializeVisitor(const json &params) : params(params) {}
 
         template<class T>
         void visit(T &v, const char *name) {
@@ -337,28 +488,14 @@ namespace miyuki::serialize {
     };
 } // namespace miyuki::serialize
 
-#define MYK_DECL_CLASS(Classname, Alias, ...)                                                                          \
-    using Self = Classname;                                                                                            \
-    static miyuki::Type *staticType() { return miyuki::GetStaticType<Self>(Alias); }                                   \
-    miyuki::Type *getType() const override { return staticType(); }                                                    \
-    static void _register() {                                                                                          \
-        static_assert(std::is_final_v<Self>, Alias " must be final");                                                  \
-        miyuki::RegisterObject(Alias, staticType());                                                                   \
-        std::string interface;                                                                                         \
-        miyuki::serialize::_assign(__VA_ARGS__);                                                                       \
-        if (!interface.empty()) {                                                                                      \
-            miyuki::BindInterfaceImplementation(interface, Alias);                                                     \
-        }                                                                                                              \
-    }
-
 #define _MYK_POLY_SER                                                                                                  \
     void save(miyuki::serialize::OutputArchive &ar) const override {                                                   \
         using Archive = miyuki::serialize::OutputArchive;                                                              \
-        ar(CEREAL_NVP_("#data", *this));                                                                               \
+        ar(CEREAL_NVP_("data", *this));                                                                               \
     }                                                                                                                  \
     void load(miyuki::serialize::InputArchive &ar) override {                                                          \
         using Archive = miyuki::serialize::InputArchive;                                                               \
-        ar(CEREAL_NVP_("#data", *this));                                                                               \
+        ar(CEREAL_NVP_("data", *this));                                                                               \
     }                                                                                                                  \
     bool isSerializable() const override { return true; }
 
@@ -379,6 +516,10 @@ namespace miyuki::serialize {
         miyuki::serialize::ArchivingVisitor v(ar);                                                                     \
         MYK_REFL(v, __VA_ARGS__);                                                                                      \
     }                                                                                                                  \
+    void _generateSchema(json &schema)const override {                                                                          \
+        miyuki::serialize::JsonSchemaGeneratorVisitor v(schema);                                                 \
+        MYK_REFL(v, __VA_ARGS__);                                                                                      \
+    }                                                                                                                  \
     _MYK_POLY_SER
 
 #define MYK_AUTO_INIT(...)                                                                                             \
@@ -386,5 +527,68 @@ namespace miyuki::serialize {
         miyuki::serialize::InitializeVisitor visitor(params);                                                          \
         MYK_REFL(visitor, __VA_ARGS__);                                                                                \
     }
+
+
+namespace cereal {
+    template<class Archive>
+    void save(Archive &ar, const miyuki::Transform &m) { ar(m.matrix()); }
+
+    template<class Archive>
+    void load(Archive &ar, miyuki::Transform &m) {
+        glm::mat4 matrix4;
+        ar(matrix4);
+        m = miyuki::Transform(matrix4);
+    }
+
+    template<class Archive>
+    void save(Archive &ar, const miyuki::TransformManipulator &m) {
+        ar(CEREAL_NVP_("translation", m.translation));
+        ar(CEREAL_NVP_("rotation", m.rotation));
+    }
+
+    template<class Archive>
+    void load(Archive &ar, miyuki::TransformManipulator &m) {
+        ar(CEREAL_NVP_("translation", m.translation));
+        ar(CEREAL_NVP_("rotation", m.rotation));
+    }
+
+    template<class Archive, class T>
+    void serialize(Archive &ar, miyuki::Degrees<T> &v) {
+        ar(CEREAL_NVP_("degrees", v.get()));
+    }
+
+    template<class Archive, class T>
+    void serialize(Archive &ar, miyuki::Radians<T> &v) {
+        ar(CEREAL_NVP_("radians", v.get()));
+    }
+
+} // namespace cereal
+namespace cereal {
+
+    template<typename Archive, int N, typename T, glm::qualifier Q>
+    void save(Archive &ar, const glm::vec<N, T, Q> &v) {
+        std::vector<T> _v;
+        for (int i = 0; i < N; i++) {
+            _v.emplace_back(v[i]);
+        }
+        ar(_v);
+    }
+
+    template<typename Archive, int N, typename T, glm::qualifier Q>
+    void load(Archive &ar, glm::vec<N, T, Q> &v) {
+        std::vector<T> _v;
+        ar(_v);
+        for (int i = 0; i < N; i++) {
+            v[i] = _v.at(i);
+        }
+    }
+
+    template<typename Archive, int C, int R, typename T, glm::qualifier Q>
+    void serialize(Archive &ar, glm::mat<C, R, T, Q> &v) {
+        for (int i = 0; i < C; i++) {
+            ar(v[i]);
+        }
+    }
+}
 
 #endif // MIYUKIRENDERER_SERIALIZE_HPP
