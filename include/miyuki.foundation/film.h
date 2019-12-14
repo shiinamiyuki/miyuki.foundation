@@ -80,8 +80,8 @@ namespace miyuki::core {
             return Pixel(color(px, py), normal(px, py), albedo(px, py), weight(px, py).r);
         }
 
-        void addSample(const vec2 &p, const vec3 &color, Float weight) {
-            auto pixel = (*this)(p);
+        void addSample(const ivec2 &p, const vec3 &color, Float weight) {
+            auto pixel = (*this)(p.x,p.y);
             pixel.color += vec4(color * weight, 0);
             pixel.weight += weight;
         }

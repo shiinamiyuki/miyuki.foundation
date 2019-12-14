@@ -213,7 +213,7 @@ namespace miyuki {
 
     template<class T>
     T lerp3(const T &v1, const T &v2, const T &v3, float u, float v) {
-        return (1 - u - v) * v1 + u * v1 + v * v2;
+        return (1 - u - v) * v1 + u * v2 + v * v3;
     }
 
     template<int N, typename T, qualifier Q>

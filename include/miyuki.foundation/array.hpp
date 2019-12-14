@@ -23,6 +23,8 @@
 #ifndef MIYUKIRENDERER_ARRAY_HPP
 #define MIYUKIRENDERER_ARRAY_HPP
 
+#include <cstdint>
+
 namespace miyuki {
     template<class T>
     class Array {
@@ -30,9 +32,7 @@ namespace miyuki {
     public:
         const size_t length;
 
-        Array(T *data, size_t N) : data(data)
-
-        length(N) {}
+        Array(T *data, size_t N) : data(data), length(N) {}
 
         T &operator[](size_t i) {
             return data[i];

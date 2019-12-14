@@ -38,7 +38,7 @@ namespace miyuki::core {
     using Spectrum = RGBSpectrum;
 
     inline bool IsBlack(const Spectrum &s) {
-        return s.x <= 0 || s.y <= 0 || s.z <= 0;
+        return any(lessThan(s, vec3(0))) || all(lessThanEqual(s, vec3(0)));
     }
 
     inline Spectrum RemoveNaN(const Spectrum & s){

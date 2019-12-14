@@ -92,23 +92,23 @@ namespace miyuki {
     public:
         virtual void visit(Property *prop) { prop->accept(this); }
 
-        virtual void visit(BoolProperty *) = 0;
+        virtual void visit(BoolProperty *) {}
 
-        virtual void visit(IntProperty *) = 0;
+        virtual void visit(IntProperty *) {}
 
-        virtual void visit(FloatProperty *) = 0;
+        virtual void visit(FloatProperty *)  {}
 
-        virtual void visit(Float3Property *) = 0;
+        virtual void visit(Float3Property *)  {}
 
-        virtual void visit(RGBProperty *) = 0;
+        virtual void visit(RGBProperty *)  {}
 
-        virtual void visit(ObjectProperty *) = 0;
+        virtual void visit(ObjectProperty *) {}
 
-        virtual void visit(FileProperty *) = 0;
+        virtual void visit(FileProperty *)  {}
 
-        virtual void visit(Int2Property *) = 0;
+        virtual void visit(Int2Property *) {}
 
-        virtual void visit(Float2Property *) = 0;
+        virtual void visit(Float2Property *)  {}
 
         virtual void visit(PropertyIterator *iter) {
             iterPrologue(iter);
