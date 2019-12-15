@@ -300,6 +300,21 @@ namespace cereal {
 } // namespace cereal
 
 namespace miyuki::serialize {
+    inline const char *glm_vec_comp_idx(int i) {
+        switch (i) {
+            case 0:
+                return "x";
+            case 1:
+                return "y";
+            case 2:
+                return "z";
+            case 3:
+                return "w";
+            default:
+                return "unknown";
+        }
+    }
+
     template<class Archive>
     struct ArchivingVisitor {
         Archive &ar;
@@ -401,7 +416,7 @@ namespace miyuki::serialize {
                 schema["properties"]["addr"] = {
                         {"type", "integer"}
                 };
-                schema["properties"]["data"] ={};
+                schema["properties"]["data"] = {};
                 auto type = T::staticType();
                 if (type->isInterface()) {
                     // any of its subtypes
@@ -424,9 +439,12 @@ namespace miyuki::serialize {
                 glm::vec<N, T, Q>
         > {
             static void generate(json &schema) {
-                schema["type"] = "array";
-                schema["items"] = json::object();
-                JsonSchemaGenerator<T>::generate(schema["items"]);
+                schema["type"] = "object";
+                schema["properties"] = json::object();
+                for (int i = 0; i < N; i++) {
+                    schema["properties"][glm_vec_comp_idx(i)] = json::object();
+                    JsonSchemaGenerator<T>::generate(schema["properties"][glm_vec_comp_idx(i)]);
+                }
             }
         };
 
@@ -566,21 +584,9 @@ namespace cereal {
 namespace cereal {
 
     template<typename Archive, int N, typename T, glm::qualifier Q>
-    void save(Archive &ar, const glm::vec<N, T, Q> &v) {
-        std::vector<T> _v;
-        for (int i = 0; i < N; i++) {
-            _v.emplace_back(v[i]);
-        }
-        ar(_v);
-    }
-
-    template<typename Archive, int N, typename T, glm::qualifier Q>
-    void load(Archive &ar, glm::vec<N, T, Q> &v) {
-        std::vector<T> _v;
-        ar(_v);
-        for (int i = 0; i < N; i++) {
-            v[i] = _v.at(i);
-        }
+    void serialize(Archive &ar, glm::vec<N, T, Q> &v) {
+        for (int i = 0; i < N; i++)
+            ar(CEREAL_NVP_(miyuki::serialize::glm_vec_comp_idx(i), v[i]));
     }
 
     template<typename Archive, int C, int R, typename T, glm::qualifier Q>

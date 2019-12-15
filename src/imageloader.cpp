@@ -80,7 +80,6 @@ namespace miyuki {
                     MIYUKI_NOT_IMPLEMENTED();
                 }
                 cached[fs::absolute(path).string()] = ImageRecord{image, last};
-                log::log("loaded {}\n", path.string());
                 stbi_image_free(data);
                 return image;
             } else {
