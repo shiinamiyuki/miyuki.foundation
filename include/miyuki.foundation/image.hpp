@@ -22,30 +22,50 @@
 #pragma once
 
 #include <miyuki.foundation/math.hpp>
+
 namespace miyuki {
-    template <class T> class TImage {
+    template<class T>
+    class TImage {
         ivec2 dimension;
         std::vector<T> texels;
 
-      public:
+    public:
         TImage(const ivec2 &dim) : dimension(dim), texels(dim[0] * dim[1]) {}
 
-        const T &operator()(int x, int y) const { return texels[x + y * dimension[0]]; }
-        T &operator()(int x, int y) { return texels[x + y * dimension[0]]; }
+        const T &operator()(int x, int y) const {
+            x = std::clamp(x, 0, dimension[0] - 1);
+            y = std::clamp(y, 0, dimension[1] - 1);
+            return texels[x + y * dimension[0]];
+        }
+
+        T &operator()(int x, int y) {
+            x = std::clamp(x, 0, dimension[0] - 1);
+            y = std::clamp(y, 0, dimension[1] - 1);
+            return texels[x + y * dimension[0]];
+        }
+
+        const T &operator()(float x, float y) const { return (*this)(vec2(x, y)); }
+
+        T &operator()(float x, float y) { return (*this)(vec2(x, y)); }
 
         const T &operator()(const ivec2 &p) const { return (*this)(p.x, p.y); }
+
         T &operator()(const ivec2 &p) { return (*this)(p.x, p.y); }
 
         const T &operator()(const vec2 &p) const { return (*this)(ivec2(p * vec2(dimension))); }
+
         T &operator()(const vec2 &p) { return (*this)(ivec2(p * vec2(dimension))); }
 
         T *data() { return texels.data(); }
+
+        const T *data() const { return texels.data(); }
     };
 
     class RGBImage : public TImage<vec3> {
-      public:
+    public:
         using TImage<vec3>::TImage;
     };
+
     class RGBAImage : public TImage<vec4> {
         using TImage<vec4>::TImage;
     };

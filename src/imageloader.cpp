@@ -21,11 +21,12 @@
 // SOFTWARE.
 #include <miyuki.foundation/imageloader.h>
 #include <unordered_map>
-
+#include <miyuki.foundation/log.hpp>
 // #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 #include <miyuki.foundation/parallel.h>
+
 
 namespace miyuki {
     class ImageLoader::Impl {
@@ -42,6 +43,7 @@ namespace miyuki {
             auto last = fs::last_write_time(path);
 
             if (iter == cached.end() || last > iter->second.lastModifiedTime) {
+                log::log("loading {}\n", path.string());
                 auto extension = path.extension().string();
                 if (extension == ".ppm") {
                     return nullptr;
@@ -49,27 +51,36 @@ namespace miyuki {
                 int w, h;
                 int comp;
                 auto data = stbi_load(path.string().c_str(), &w, &h, &comp, 3);
+                if (!data) {
+                    log::log("failed to load {}\n", path.extension().string());
+                    return nullptr;
+                }
+                auto invGamma = [](const vec3 &v, float gamma) {
+                    return pow(v, vec3(1.0f / gamma));
+                };
                 auto image = std::make_shared<RGBAImage>(ivec2(w, h));
                 if (comp == 4) {
                     ParallelFor(
                             0, w * h,
-                            [&](int i, int threadIdx) {
+                            [=](int i, int threadIdx) {
                                 image->data()[i] =
-                                        vec4(data[4 * i + 0], data[4 * i + 1], data[4 * i + 2], data[4 * i + 3]);
+                                        vec4(invGamma(vec3(data[4 * i + 0], data[4 * i + 1], data[4 * i + 2]) / 255.0f,
+                                                      1.0f / 2.2f), data[4 * i + 3] / 255.0f);
                             },
-                            1024);
+                            4096);
                 } else if (comp == 3) {
                     ParallelFor(
                             0, w * h,
-                            [&](int i, int threadIdx) {
-                                image->data()[i] = vec4(data[3 * i + 0], data[3 * i + 1], data[3 * i + 2], 1);
-                            },
-                            1024);
+                            [=](int i, int threadIdx) {
+                                image->data()[i] = vec4(
+                                        invGamma(vec3(data[3 * i + 0], data[3 * i + 1], data[3 * i + 2])
+                                                 / 255.0f, 1.0f / 2.2f), 1);
+                            }, 4096);
                 } else {
                     MIYUKI_NOT_IMPLEMENTED();
                 }
-                stbi_image_free(data);
                 cached[fs::absolute(path).string()] = ImageRecord{image, last};
+                stbi_image_free(data);
                 return image;
             } else {
                 return iter->second.image;

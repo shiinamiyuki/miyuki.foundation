@@ -39,7 +39,7 @@ namespace miyuki {
         std::deque<std::pair<int64_t, int64_t>> queue;
         std::atomic<uint32_t> activeWorkers;
         WorkFunc workFunc;
-
+        std::atomic<bool> isMainWaiting;
       public:
         ParallelForContext() noexcept : workers(GetCoreNumber()), shutdown(false), activeWorkers(0) {
             for (int i = 0; i < workers.size(); i++) {
@@ -48,10 +48,7 @@ namespace miyuki {
                     std::unique_lock<std::mutex> lock(taskMutex);
                     while (!shutdown) {
                         if (queue.empty()) {
-                            {
-                                std::unique_lock<std::mutex> lock1(mainMutex);
-                                mainWaiting.notify_one();
-                            }
+
                             taskWaiting.wait(lock);
                         } else {
                             activeWorkers++;
@@ -65,6 +62,13 @@ namespace miyuki {
                             }
                             lock.lock();
                             activeWorkers--;
+                            if(queue.empty() && activeWorkers == 0){
+                                {
+                                    std::unique_lock<std::mutex> lock1(mainMutex);
+                                    if(isMainWaiting)
+                                        mainWaiting.notify_one();
+                                }
+                            }
                         }
                     }
                 });
@@ -95,10 +99,12 @@ namespace miyuki {
                 }
 
                 taskWaiting.notify_all();
+                isMainWaiting = true;
             }
             {
                 std::unique_lock<std::mutex> lock(mainMutex);
                 mainWaiting.wait(lock);
+                isMainWaiting = false;
             }
         }
     };

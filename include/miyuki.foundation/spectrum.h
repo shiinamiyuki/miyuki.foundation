@@ -25,6 +25,7 @@
 
 #include <miyuki.foundation/defs.h>
 #include <miyuki.foundation/math.hpp>
+#include <miyuki.foundation/serialize.hpp>
 
 namespace miyuki::core {
 
@@ -38,8 +39,23 @@ namespace miyuki::core {
     using Spectrum = RGBSpectrum;
 
     inline bool IsBlack(const Spectrum &s) {
-        return s.x <= 0 || s.y <= 0 || s.z <= 0;
+        return any(lessThan(s, vec3(0))) || all(lessThanEqual(s, vec3(0)));
     }
 
+    inline Spectrum RemoveNaN(const Spectrum & s){
+        auto removeNan = [=](float x){return std::isnan(x) ? 0 : x;};
+        return Spectrum(removeNan(s[0]),
+                        removeNan(s[1]),
+                        removeNan(s[2]));
+    }
+
+}
+namespace miyuki::serialize::detail{
+    template <>
+    struct JsonSchemaGenerator<core::RGBSpectrum>{
+        static void generate(nlohmann::json &schema){
+            JsonSchemaGenerator<vec3>::generate(schema);
+        }
+    };
 }
 #endif //MIYUKIRENDERER_SPECTRUM_H

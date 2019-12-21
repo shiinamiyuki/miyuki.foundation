@@ -75,7 +75,7 @@ namespace miyuki{
 #define MIYUKI_NOT_IMPLEMENTED() std::abort()
 #define MIYUKI_THROW(exception, ...) throw exception(__VA_ARGS__)
 
-#define MIYUKI_CHECK(expr)   do{if(!(expr)){ fmt::print(stderr, "{} failed at {}:{}",#expr, __FILE__,__LINE__);   }}while(0)
+#define MIYUKI_CHECK(expr)   do{if(!(expr)){ fmt::print(stderr, "{} failed at {}:{}\n",#expr, __FILE__,__LINE__);   }}while(0)
 
     inline void __assert(bool expr, const std::string &msg) {
         if (!expr) {
@@ -83,7 +83,7 @@ namespace miyuki{
         }
     }
 
-#define MIYUKI_ASSERT(expr)   _assert(expr, fmt::format("{} failed at {}:{}",#expr, __FILE__,__LINE__))
+#define MIYUKI_ASSERT(expr)   _assert(expr, fmt::format("{} failed at {}:{}\n",#expr, __FILE__,__LINE__))
 
 #ifdef _MSC_VER
 

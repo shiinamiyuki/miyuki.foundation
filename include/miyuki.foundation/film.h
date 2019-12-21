@@ -25,30 +25,32 @@
 
 #include <miyuki.foundation/math.hpp>
 #include <algorithm>
+#include <miyuki.foundation/image.hpp>
 
 namespace miyuki::core {
 
     struct Film {
-        struct Pixels {
-            std::vector<vec4> color;
-            std::vector<vec4> weight;
-
-            explicit Pixels(int s) : color(s), weight(s) {}
+        struct Sample {
+            vec3 color, normal, albedo;
         };
 
         struct Pixel {
             vec4 &color;
+            vec4 &normal;
+            vec4 &albedo;
             float &weight;
 
-            Pixel(vec4 &color, float &weight) : color(color), weight(weight) {}
+            Pixel(vec4 &color, vec4 &normal, vec4 &albedo, float &weight) : color(color), normal(normal),
+                                                                            albedo(albedo), weight(weight) {}
         };
 
-        Pixels pixels;
+        RGBAImage color, normal, weight, albedo;
         const size_t width, height;
 
-        explicit Film(const ivec2 &dim) : Film(dim.x, dim.y) {}
+        explicit Film(const ivec2 &dim) : color(dim), weight(dim), normal(dim), albedo(dim), width(dim[0]),
+                                          height(dim[1]) {}
 
-        Film(size_t w, size_t h) : width(w), height(h), pixels(w * h) {}
+        Film(size_t w, size_t h) : Film(ivec2(w, h)) {}
 
         static float gamma(float x, float k = 1.0f / 2.2f) { return std::pow(clamp(x, 0.0f, 1.0f), k); }
 
@@ -60,9 +62,9 @@ namespace miyuki::core {
             auto f = fopen(filename.c_str(), "w");
             fprintf(f, "P3\n%d %d\n%d\n", width, height, 255);
             for (int i = 0; i < width * height; i++) {
-                auto invWeight = pixels.weight[i].r == 0 ? 0.0f : 1.0f / pixels.weight[i].r;
-                fprintf(f, "%d %d %d ", toInt(pixels.color[i][0] * invWeight), toInt(pixels.color[i][1] * invWeight),
-                        toInt(pixels.color[i][2] * invWeight));
+                auto invWeight = weight.data()[i].r == 0 ? 0.0f : 1.0f / weight.data()[i].r;
+                fprintf(f, "%d %d %d ", toInt(color.data()[i][0] * invWeight), toInt(color.data()[i][1] * invWeight),
+                        toInt(color.data()[i][2] * invWeight));
             }
         }
 
@@ -71,16 +73,24 @@ namespace miyuki::core {
         Pixel operator()(const vec2 &p) { return (*this)(p.x, p.y); }
 
         Pixel operator()(float x, float y) {
-            int px = clamp<int>(std::lround(x * width), 0, width - 1);
-            int py = clamp<int>(std::lround(y * height), 0, height - 1);
-            return Pixel(pixels.color.at(px + py * width), pixels.weight.at(px + py * width).r);
+            return Pixel(color(x, y), normal(x, y), albedo(x, y), weight(x, y).r);
         }
 
-        Pixel operator()(int px, int py) { return Pixel(pixels.color.at(px + py * width), pixels.weight.at(px + py * width).r); }
+        Pixel operator()(int px, int py) {
+            return Pixel(color(px, py), normal(px, py), albedo(px, py), weight(px, py).r);
+        }
 
-        void addSample(const vec2 &p, const vec3 &color, Float weight) {
-            auto pixel = (*this)(p);
+        void addSample(const ivec2 &p, const vec3 &color, Float weight) {
+            auto pixel = (*this)(p.x,p.y);
             pixel.color += vec4(color * weight, 0);
+            pixel.weight += weight;
+        }
+
+        void addSample(const vec2 &p, const Sample &sample, Float weight) {
+            auto pixel = (*this)(p);
+            pixel.color += vec4(sample.color * weight, 0);
+            pixel.normal += vec4(sample.normal * weight, 0);
+            pixel.albedo += vec4(sample.albedo * weight, 0);
             pixel.weight += weight;
         }
     };

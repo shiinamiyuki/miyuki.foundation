@@ -20,31 +20,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <miyuki.foundation/film.h>
+#ifndef MIYUKIRENDERER_DISTRIBUTION_H
+#define MIYUKIRENDERER_DISTRIBUTION_H
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
-
-#include <stb_image.h>
-#include <stb_image_write.h>
-#include <lodepng.h>
-#include <miyuki.foundation/log.hpp>
 
 namespace miyuki::core {
-    void Film::writeImage(const std::string &filename) {
-        std::vector<unsigned char> pixelBuffer;
-        for (int i = 0; i < width * height; i++) {
-            auto invWeight = weight.data()[i].r == 0 ? 0.0f : 1.0f / weight.data()[i].r;
-            pixelBuffer.emplace_back(toInt(color.data()[i][0] * invWeight));
-            pixelBuffer.emplace_back(toInt(color.data()[i][1] * invWeight));
-            pixelBuffer.emplace_back(toInt(color.data()[i][2] * invWeight));
-            pixelBuffer.emplace_back(255);
+    template<class Container>
+    class Distribution1D {
+        Container<float> cdf;
+    public:
+        Distribution1D(const Container<float> & func){
+
         }
-        auto error = lodepng::encode(filename, pixelBuffer, (uint32_t) width, (uint32_t) height);
-        if (error) {
-            log::log("error saving {}: {}\n", filename, lodepng_error_text(error));
-        } else {
-            log::log("saved to {}\n", filename);
-        }
-    }
+    };
 }
+
+
+#endif //MIYUKIRENDERER_DISTRIBUTION_H
