@@ -1,15 +1,9 @@
-[submodule "external/cereal"]
-	path = external/cereal
-	url = https://github.com/USCiLab/cereal
 [submodule "external/glm"]
 	path = external/glm
 	url = https://github.com/g-truc/glm
 [submodule "external/glfw"]
 	path = external/glfw
 	url = https://github.com/glfw/glfw
-[submodule "external/json"]
-	path = external/json
-	url = https://github.com/nlohmann/json
 [submodule "external/stb"]
 	path = external/stb
 	url = https://github.com/nothings/stb
@@ -25,3 +19,6 @@
 [submodule "external/openexr"]
 	path = external/openexr
 	url = https://github.com/AcademySoftwareFoundation/openexr
+[submodule "external/miyuki.serialize"]
+	path = external/miyuki.serialize
+	url = http://github.com/shiinamiyuki/miyuki.serialize
