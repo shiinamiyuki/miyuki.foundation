@@ -9,6 +9,7 @@
     <mapping directory="$PROJECT_DIR$/external/glm" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/external/json" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/external/lodepng" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/external/miyuki.serialize" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/external/openexr" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/external/stb" vcs="Git" />
   </component>
