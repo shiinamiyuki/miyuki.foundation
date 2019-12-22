@@ -24,7 +24,8 @@
 #define MIYUKIRENDERER_MATH_HPP
 
 #include <cmath>
-#include <miyuki.serialize/serialize-fwd.hpp>
+#include <miyuki.serialize/serialize.hpp>
+#include <miyuki.foundation/defs.h>
 #include <xmmintrin.h>
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
@@ -32,6 +33,8 @@
 
 
 namespace miyuki {
+
+    using json = serialize::json::json;
     using Float = float;
     using namespace glm;
     using Point3f = vec3;
@@ -40,6 +43,39 @@ namespace miyuki {
     using Point2f = vec2;
     using Point2i = ivec2;
     using Point3i = ivec3;
+}
+namespace glm {
+    using json = nlohmann::json;
+
+    template<int N, typename T, qualifier Q>
+    inline void to_json(json &j, const vec<N, T, Q> &v) {
+        j = json::array();
+        for (int i = 0; i < N; i++) {
+            j[i] = v[i];
+        }
+    }
+
+    template<int N, typename T, qualifier Q>
+    inline void from_json(const json &j, vec<N, T, Q> &v) {
+        for (int i = 0; i < N; i++) {
+            v[i] = j[i];
+        }
+    }
+
+    inline void to_json(json &j, const mat4 &m) {
+        j = json::array();
+        for (int i = 0; i < 4; i++) {
+            j[i] = m[i];
+        }
+    }
+
+    inline void from_json(const json &j, mat4 &m) {
+        for (int i = 0; i < 4; i++) {
+            m[i] = j[i].get<vec4>();
+        }
+    }
+}
+namespace miyuki {
 
     class Transform {
         mat4 T, invT;
@@ -181,6 +217,57 @@ namespace miyuki {
     template<class T>
     T lerp(const T &x, const T &y, const T &a) {
         return x * T(1.0f - a) + y * a;
+    }
+
+    template<class T>
+    struct Angle {
+        Angle() = default;
+
+        Angle(const T &v) : data(v) {}
+
+        operator T() const { return data; }
+
+        auto &get() const { return data; }
+
+    private:
+        T data;
+    };
+
+    inline vec3 FaceForward(const vec3 &v, const vec3 &n) {
+        return dot(v, n) < 0 ? -v : v;
+    }
+
+    inline void to_json(json &j, const Transform &transform) { j = transform.matrix(); }
+
+    inline void from_json(const json &j, Transform &transform) { transform = Transform(j.get<mat4>()); }
+
+    template<class T>
+    void to_json(json &j, const Angle<T> &v) {
+        j = v.get();
+    }
+
+
+    template<class T>
+    void from_json(const json &j, Angle<T> &v) {
+        if (j.contains("deg")) {
+            v = DegreesToRadians(j.get<T>());
+        } else if (j.contains("rad")) {
+            v = j.get<T>();
+        } else {
+            v = j.get<T>();
+        }
+    }
+
+
+    inline void to_json(json &j, const TransformManipulator &transform) {
+        j = json::object();
+        j["rotation"] = transform.rotation;
+        j["translation"] = transform.translation;
+    }
+
+    inline void from_json(const json &j, TransformManipulator &transform) {
+        transform.rotation = j.at("rotation").get<Angle<vec3 >>();
+        transform.translation = j.at("translation").get<vec3>();
     }
 } // namespace miyuki
 

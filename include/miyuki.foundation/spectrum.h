@@ -25,7 +25,7 @@
 
 #include <miyuki.foundation/defs.h>
 #include <miyuki.foundation/math.hpp>
-#include <miyuki.foundation/serialize.hpp>
+#include <miyuki.serialize/serialize.hpp>
 
 namespace miyuki::core {
 
@@ -50,12 +50,5 @@ namespace miyuki::core {
     }
 
 }
-namespace miyuki::serialize::detail{
-    template <>
-    struct JsonSchemaGenerator<core::RGBSpectrum>{
-        static void generate(nlohmann::json &schema){
-            JsonSchemaGenerator<vec3>::generate(schema);
-        }
-    };
-}
+
 #endif //MIYUKIRENDERER_SPECTRUM_H

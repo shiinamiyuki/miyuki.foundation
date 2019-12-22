@@ -23,11 +23,11 @@
 #ifndef MIYUKI_FOUNDATION_INTERFACES_H
 #define MIYUKI_FOUNDATION_INTERFACES_H
 
-
+#include <miyuki.serialize/serialize.hpp>
 namespace miyuki{
 
 #define MYK_INTERFACE(Classname, Alias)
-#define MYK_DECL_CLASS(Classname, Alias, ...)
+#define MYK_DECL_CLASS(Classname, Alias, ...) MYK_TYPE(Classname, Alias)
 
 }
 #endif //MIYUKI_FOUNDATION_INTERFACES_H
