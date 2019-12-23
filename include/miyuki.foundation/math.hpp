@@ -76,6 +76,19 @@ namespace glm {
     }
 }
 namespace miyuki {
+    template<class T>
+    struct Angle {
+        Angle() = default;
+
+        Angle(const T &v) : data(v) {}
+
+        operator T() const { return data; }
+
+        auto &get() const { return data; }
+
+    private:
+        T data;
+    };
 
     class Transform {
         mat4 T, invT;
@@ -120,14 +133,14 @@ namespace miyuki {
 
     class TransformManipulator {
     public:
-        vec3 rotation;
+        Angle<vec3> rotation;
         vec3 translation;
 
         [[nodiscard]] Transform toTransform() const {
             mat4 m = identity<mat4>();
-            m = rotate(rotation.z, Vec3f(0, 0, 1)) * m;
-            m = rotate(rotation.y, Vec3f(1, 0, 0)) * m;
-            m = rotate(rotation.x, Vec3f(0, 1, 0)) * m;
+            m = rotate(rotation.get().z, Vec3f(0, 0, 1)) * m;
+            m = rotate(rotation.get().y, Vec3f(1, 0, 0)) * m;
+            m = rotate(rotation.get().x, Vec3f(0, 1, 0)) * m;
             m = glm::translate(translation) * m;
             return Transform(m);
         }
@@ -219,19 +232,7 @@ namespace miyuki {
         return x * T(1.0f - a) + y * a;
     }
 
-    template<class T>
-    struct Angle {
-        Angle() = default;
 
-        Angle(const T &v) : data(v) {}
-
-        operator T() const { return data; }
-
-        auto &get() const { return data; }
-
-    private:
-        T data;
-    };
 
     inline vec3 FaceForward(const vec3 &v, const vec3 &n) {
         return dot(v, n) < 0 ? -v : v;
