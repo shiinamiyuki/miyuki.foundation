@@ -159,9 +159,9 @@ namespace miyuki {
 
         explicit CoordinateSystem(const Vec3f &v) : normal(v) { ComputeLocalFrame(v, &localX, &localZ); }
 
-        Vec3f worldToLocal(const Vec3f &v) const { return Vec3f(dot(localX, v), dot(normal, v), dot(localZ, v)); }
+        [[nodiscard]] Vec3f worldToLocal(const Vec3f &v) const { return Vec3f(dot(localX, v), dot(normal, v), dot(localZ, v)); }
 
-        Vec3f localToWorld(const Vec3f &v) const { return Vec3f(v.x * localX + v.y * normal + v.z * localZ); }
+        [[nodiscard]] Vec3f localToWorld(const Vec3f &v) const { return Vec3f(v.x * localX + v.y * normal + v.z * localZ); }
 
     private:
         Vec3f normal;
@@ -206,7 +206,7 @@ namespace miyuki {
 
     template<class T>
     T lerp3(const T &v1, const T &v2, const T &v3, float u, float v) {
-        return (1 - u - v) * v1 + u * v1 + v * v2;
+        return (1 - u - v) * v1 + u * v2 + v * v3;
     }
 
     template<int N, typename T, qualifier Q>
@@ -233,7 +233,6 @@ namespace miyuki {
     }
 
 
-
     inline vec3 FaceForward(const vec3 &v, const vec3 &n) {
         return dot(v, n) < 0 ? -v : v;
     }
@@ -244,16 +243,18 @@ namespace miyuki {
 
     template<class T>
     void to_json(json &j, const Angle<T> &v) {
-        j = v.get();
+        j = {
+                {"rad", v}
+        };
     }
 
 
     template<class T>
     void from_json(const json &j, Angle<T> &v) {
         if (j.contains("deg")) {
-            v = DegreesToRadians(j.get<T>());
+            v = DegreesToRadians(j.at("deg").get<T>());
         } else if (j.contains("rad")) {
-            v = j.get<T>();
+            v = j.at("rad").get<T>();
         } else {
             v = j.get<T>();
         }
@@ -267,7 +268,7 @@ namespace miyuki {
     }
 
     inline void from_json(const json &j, TransformManipulator &transform) {
-        transform.rotation = j.at("rotation").get<Angle<vec3 >>();
+        transform.rotation = j.at("rotation").get<Angle<vec3>>();
         transform.translation = j.at("translation").get<vec3>();
     }
 } // namespace miyuki
