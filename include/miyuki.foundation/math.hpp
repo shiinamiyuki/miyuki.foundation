@@ -244,7 +244,7 @@ namespace miyuki {
     template<class T>
     void to_json(json &j, const Angle<T> &v) {
         j = {
-                {"rad", v}
+                {"rad", v.get()}
         };
     }
 

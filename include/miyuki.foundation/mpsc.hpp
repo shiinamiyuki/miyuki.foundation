@@ -111,7 +111,7 @@ namespace miyuki::mpsc {
     template<class T>
     struct Sender {
 
-        friend class detail::Sender<T>;
+        friend struct detail::Sender<T>;
 
         friend channel_t<T> channel<T>();
 
@@ -131,7 +131,7 @@ namespace miyuki::mpsc {
 
     template<class T>
     struct Receiver {
-        friend class detail::Receiver<T>;
+        friend struct detail::Receiver<T>;
 
         friend channel_t<T> channel<T>();
 

@@ -60,7 +60,7 @@ namespace miyuki::core {
 
         void writePPM(const std::string &filename) {
             auto f = fopen(filename.c_str(), "w");
-            fprintf(f, "P3\n%d %d\n%d\n", width, height, 255);
+            fprintf(f, "P3\n%zu %zu\n%d\n", width, height, 255);
             for (int i = 0; i < width * height; i++) {
                 auto invWeight = weight.data()[i].r == 0 ? 0.0f : 1.0f / weight.data()[i].r;
                 fprintf(f, "%d %d %d ", toInt(color.data()[i][0] * invWeight), toInt(color.data()[i][1] * invWeight),
