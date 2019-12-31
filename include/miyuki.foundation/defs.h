@@ -29,6 +29,7 @@ namespace miyuki {
     namespace fs = boost::filesystem;
 }
 #else
+
 #include <filesystem>
 
 namespace miyuki {
@@ -36,7 +37,7 @@ namespace miyuki {
 }
 #endif
 
-namespace miyuki{
+namespace miyuki {
     using Float = float;
     constexpr Float Pi = 3.1415926535f;
     constexpr Float Pi2 = Pi * 0.5f;
@@ -75,6 +76,7 @@ namespace miyuki{
 #define MIYUKI_NOT_IMPLEMENTED() std::abort()
 #define MIYUKI_THROW(exception, ...) throw exception(__VA_ARGS__)
 
+#ifndef MYK_RELEASE
 #define MIYUKI_CHECK(expr)   do{if(!(expr)){ fmt::print(stderr, "{} failed at {}:{}\n",#expr, __FILE__,__LINE__);   }}while(0)
 
     inline void __assert(bool expr, const std::string &msg) {
@@ -85,6 +87,10 @@ namespace miyuki{
 
 #define MIYUKI_ASSERT(expr)   _assert(expr, fmt::format("{} failed at {}:{}\n",#expr, __FILE__,__LINE__))
 
+#else
+#define MIYUKI_CHECK(expr)
+#define MIYUKI_ASSERT(expr)
+#endif
 #ifdef _MSC_VER
 
 #define     MYK_PUBLIC_API __declspec(dllexport)
