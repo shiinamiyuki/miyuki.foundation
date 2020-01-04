@@ -19,3 +19,6 @@
 [submodule "external/miyuki.serialize"]
 	path = external/miyuki.serialize
 	url = http://github.com/shiinamiyuki/miyuki.serialize
+[submodule "external/miyuki.math"]
+	path = external/miyuki.math
+	url = https://github.com/shiinamiyuki/miyuki.math
