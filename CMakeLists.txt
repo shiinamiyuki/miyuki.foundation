@@ -8,7 +8,6 @@ add_library(foundation ${libSRC} external/lodepng/lodepng.cpp external/lodepng/l
 target_include_directories(foundation PUBLIC include/)
 target_include_directories(foundation PUBLIC external/miyuki.serialize/include)
 target_include_directories(foundation PUBLIC external/miyuki.math/include)
-target_include_directories(foundation PUBLIC external/glm)
 target_include_directories(foundation PUBLIC external/stb)
 target_include_directories(foundation PUBLIC external/fmt/include)
 target_include_directories(foundation PUBLIC external/lodepng)
