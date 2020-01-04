@@ -29,17 +29,17 @@
 
 namespace miyuki::core {
 
-    class RGBSpectrum : public vec3 {
+    class RGBSpectrum : public Vec3f {
     public:
-        using vec3::vec3;
+        using Vec3f::Vec3f;
 
-        RGBSpectrum(const vec3 &v) : vec3(v) {}
+        RGBSpectrum(const Vec3f &v) : Vec3f(v) {}
     };
 
     using Spectrum = RGBSpectrum;
 
     inline bool IsBlack(const Spectrum &s) {
-        return any(lessThan(s, vec3(0))) || all(lessThanEqual(s, vec3(0)));
+        return (s.r() < 0 || s.g() < 0 || s.b() < 0) || (s.r() == 0 && s.g() == 0 && s.b() == 0);
     }
 
     inline Spectrum RemoveNaN(const Spectrum & s){

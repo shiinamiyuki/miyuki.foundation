@@ -84,15 +84,15 @@ namespace miyuki::core {
 
         void addSample(const Vec2i &p, const Vec3f &color, Float weight) {
             auto pixel = (*this)(p.x(), p.y());
-            pixel.color.get() += float4(color * weight, 0);
+            pixel.color.get() += float3(color * weight);
             pixel.weight.get() += weight;
         }
 
         void addSample(const Vec2f &p, const Sample &sample, Float weight) {
             auto pixel = (*this)(p);
-            pixel.color.get() += float4(sample.color * weight, 0);
-            pixel.normal.get() += float4(sample.normal * weight, 0);
-            pixel.albedo.get() += float4(sample.albedo * weight, 0);
+            pixel.color.get() += float3(sample.color * weight);
+            pixel.normal.get() += float3(sample.normal * weight);
+            pixel.albedo.get() += float3(sample.albedo * weight);
             pixel.weight.get() += weight;
         }
     };

@@ -95,21 +95,21 @@ namespace miyuki {
     };
 
     template<class Value>
-    class Transform {
+    class TTransform {
         using mat4 = Matrix4<Value>;
         using mat3 = Matrix3<Value>;
         mat4 T, invT;
         mat3 T3, invT3, invT3T;
     public:
-        Transform() = default;
+        TTransform() = default;
 
-        explicit Transform(const mat4 &T) : T(T), invT(math::inverse(T)) {
+        explicit TTransform(const mat4 &T) : T(T), invT(math::inverse(T)) {
             T3 = mat3(T);
             invT3 = mat3(invT);
             invT3T = transpose(invT3);
         }
 
-        Transform(const mat4 &T, const mat4 &invT) : T(T), invT(invT) {
+        TTransform(const mat4 &T, const mat4 &invT) : T(T), invT(invT) {
             T3 = mat3(T);
             invT3 = mat3(invT);
             invT3T = transpose(invT3);
@@ -117,8 +117,8 @@ namespace miyuki {
 
         [[nodiscard]] const mat4 &matrix() const { return T; }
 
-        [[nodiscard]] Transform inverse() const {
-            return Transform{invT, T};
+        [[nodiscard]] TTransform inverse() const {
+            return TTransform{invT, T};
         }
 
         [[nodiscard]] Vec3f transformVec3(const Vec3f &v) const {
@@ -127,56 +127,60 @@ namespace miyuki {
 
         [[nodiscard]] Point3f transformPoint3(const Point3f &v) const {
             auto x = T * Array<float, 4>{v.x(), v.y(), v.z(), 1.0f};
-            if (x.w == 1) {
+            if (x.w() == 1) {
                 return x;
             }
-            return Vec3f(x) / x.w;
+            return Vec3f(x) / x.w();
         }
 
         [[nodiscard]] Normal3f transformNormal3(const Normal3f &v) const {
             return invT3T * v;
         }
     };
-
+    using Transform = TTransform<float>;
     class TransformManipulator {
     public:
         Angle<Vec3f> rotation;
         Vec3f translation;
 
-        [[nodiscard]] Transform<float> toTransform() const {
+        [[nodiscard]] Transform toTransform() const {
             Matrix4f m = Matrix4f::identity();
             m = Matrix4f::rotate(rotation.get().z(), Vec3f(0, 0, 1)) * m;
             m = Matrix4f::rotate(rotation.get().y(), Vec3f(1, 0, 0)) * m;
             m = Matrix4f::rotate(rotation.get().x(), Vec3f(0, 1, 0)) * m;
             m = Matrix4f::translate(translation) * m;
-            return Transform<float>(m);
+            return Transform(m);
         }
     };
 
-    inline void ComputeLocalFrame(const Vec3f &v1, Vec3f *v2, Vec3f *v3) {
+    template<class Value>
+    inline void ComputeLocalFrame(const Array<Value, 3> &v1, Array<Value, 3> *v2, Array<Value, 3> *v3) {
+        using Vector3 = Array<Value, 3>;
         if (std::abs(v1.x()) > std::abs(v1.y()))
-            *v2 = Vec3f(-v1.z(), 0, v1.x()) / Vec3f(std::sqrt(v1.x() * v1.x() + v1.z() * v1.z()));
+            *v2 = Vector3(-v1.z(), Value(0), v1.x()) / Vector3(std::sqrt(v1.x() * v1.x() + v1.z() * v1.z()));
         else
-            *v2 = Vec3f(0, v1.z(), -v1.y()) / Vec3f(std::sqrt(v1.y() * v1.y() + v1.z() * v1.z()));
+            *v2 = Vector3(Value(0), v1.z(), -v1.y()) / Vector3(std::sqrt(v1.y() * v1.y() + v1.z() * v1.z()));
         *v3 = normalize(cross(v1, *v2));
     }
 
+    template<class Value>
     struct CoordinateSystem {
+        using Vector3 = Array<Value, 3>;
         CoordinateSystem() = default;
 
-        explicit CoordinateSystem(const Vec3f &v) : normal(v) { ComputeLocalFrame(v, &localX, &localZ); }
+        explicit CoordinateSystem(const Vector3 &v) : normal(v) { ComputeLocalFrame(v, &localX, &localZ); }
 
-        [[nodiscard]] Vec3f worldToLocal(const Vec3f &v) const {
-            return Vec3f(dot(localX, v), dot(normal, v), dot(localZ, v));
+        [[nodiscard]] Vector3 worldToLocal(const Vector3 &v) const {
+            return Vector3(dot(localX, v), dot(normal, v), dot(localZ, v));
         }
 
-        [[nodiscard]] Vec3f localToWorld(const Vec3f &v) const {
-            return Vec3f(v.x() * localX + v.y() * normal + v.z() * localZ);
+        [[nodiscard]] Vector3 localToWorld(const Vector3 &v) const {
+            return Vector3(v.x() * localX + v.y() * normal + v.z() * localZ);
         }
 
     private:
-        Vec3f normal;
-        Vec3f localX, localZ;
+        Vector3 normal;
+        Vector3 localX, localZ;
     };
 
     template<class T, int N>
@@ -214,7 +218,9 @@ namespace miyuki {
     };
 
     using Bounds3f = BoundBox<float, 3>;
-
+    using Bounds2f = BoundBox<float, 2>;
+    using Bounds3i = BoundBox<int, 3>;
+    using Bounds2i = BoundBox<int, 2>;
     template<class T>
     T lerp3(const T &v1, const T &v2, const T &v3, float u, float v) {
         return (1 - u - v) * v1 + u * v2 + v * v3;
@@ -249,10 +255,10 @@ namespace miyuki {
     }
 
     template<class T>
-    inline void to_json(json &j, const Transform<T> &transform) { j = transform.matrix(); }
+    inline void to_json(json &j, const TTransform<T> &transform) { j = transform.matrix(); }
 
     template<class T>
-    inline void from_json(const json &j, Transform<T> &transform) { transform = Transform(j.get<Matrix4<T>>()); }
+    inline void from_json(const json &j, TTransform<T> &transform) { transform = Transform(j.get<Matrix4<T>>()); }
 
     template<class T>
     void to_json(json &j, const Angle<T> &v) {
