@@ -34,7 +34,7 @@ namespace miyuki::core {
     void Film::writeImage(const std::string &filename) {
         std::vector<unsigned char> pixelBuffer;
         for (int i = 0; i < width * height; i++) {
-            auto invWeight = weight.data()[i].r == 0 ? 0.0f : 1.0f / weight.data()[i].r;
+            auto invWeight = weight.data()[i].r() == 0 ? 0.0f : 1.0f / weight.data()[i].r();
             pixelBuffer.emplace_back(toInt(color.data()[i][0] * invWeight));
             pixelBuffer.emplace_back(toInt(color.data()[i][1] * invWeight));
             pixelBuffer.emplace_back(toInt(color.data()[i][2] * invWeight));

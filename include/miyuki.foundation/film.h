@@ -31,28 +31,30 @@ namespace miyuki::core {
 
     struct Film {
         struct Sample {
-            vec3 color, normal, albedo;
+            float3 color, normal, albedo;
         };
 
         struct Pixel {
-            vec4 &color;
-            vec4 &normal;
-            vec4 &albedo;
-            float &weight;
+            std::reference_wrapper<float3> color;
+            std::reference_wrapper<float3> normal;
+            std::reference_wrapper<float3> albedo;
+            std::reference_wrapper<float> weight;
 
-            Pixel(vec4 &color, vec4 &normal, vec4 &albedo, float &weight) : color(color), normal(normal),
-                                                                            albedo(albedo), weight(weight) {}
+            Pixel(float3 &color, float3 &normal, float3 &albedo, float &weight) : color(color), normal(normal),
+                                                                                  albedo(albedo), weight(weight) {}
+
+            Pixel(const Pixel &) = default;
         };
 
-        RGBAImage color, normal, weight, albedo;
+        RGBImage color, normal, weight, albedo;
         const size_t width, height;
 
-        explicit Film(const ivec2 &dim) : color(dim), weight(dim), normal(dim), albedo(dim), width(dim[0]),
+        explicit Film(const Vec2i &dim) : color(dim), weight(dim), normal(dim), albedo(dim), width(dim[0]),
                                           height(dim[1]) {}
 
-        Film(size_t w, size_t h) : Film(ivec2(w, h)) {}
+        Film(size_t w, size_t h) : Film(Vec2i(w, h)) {}
 
-        static float gamma(float x, float k = 1.0f / 2.2f) { return std::pow(clamp(x, 0.0f, 1.0f), k); }
+        static float gamma(float x, float k = 1.0f / 2.2f) { return std::pow(std::clamp(x, 0.0f, 1.0f), k); }
 
         static int toInt(float x) {
             return std::max<uint32_t>(0, std::min<uint32_t>(255, std::lroundf(gamma(x) * 255)));
@@ -62,7 +64,7 @@ namespace miyuki::core {
             auto f = fopen(filename.c_str(), "w");
             fprintf(f, "P3\n%zu %zu\n%d\n", width, height, 255);
             for (int i = 0; i < width * height; i++) {
-                auto invWeight = weight.data()[i].r == 0 ? 0.0f : 1.0f / weight.data()[i].r;
+                auto invWeight = weight.data()[i].r() == 0 ? 0.0f : 1.0f / weight.data()[i].r();
                 fprintf(f, "%d %d %d ", toInt(color.data()[i][0] * invWeight), toInt(color.data()[i][1] * invWeight),
                         toInt(color.data()[i][2] * invWeight));
             }
@@ -70,28 +72,28 @@ namespace miyuki::core {
 
         void writeImage(const std::string &filename);
 
-        Pixel operator()(const vec2 &p) { return (*this)(p.x, p.y); }
+        Pixel operator()(const Vec2f &p) { return (*this)(p.x(), p.y()); }
 
         Pixel operator()(float x, float y) {
-            return Pixel(color(x, y), normal(x, y), albedo(x, y), weight(x, y).r);
+            return std::move(Pixel(color(x, y), normal(x, y), albedo(x, y), weight(x, y).r()));
         }
 
         Pixel operator()(int px, int py) {
-            return Pixel(color(px, py), normal(px, py), albedo(px, py), weight(px, py).r);
+            return Pixel(color(px, py), normal(px, py), albedo(px, py), weight(px, py).r());
         }
 
-        void addSample(const ivec2 &p, const vec3 &color, Float weight) {
-            auto pixel = (*this)(p.x,p.y);
-            pixel.color += vec4(color * weight, 0);
-            pixel.weight += weight;
+        void addSample(const Vec2i &p, const Vec3f &color, Float weight) {
+            auto pixel = (*this)(p.x(), p.y());
+            pixel.color.get() += float4(color * weight, 0);
+            pixel.weight.get() += weight;
         }
 
-        void addSample(const vec2 &p, const Sample &sample, Float weight) {
+        void addSample(const Vec2f &p, const Sample &sample, Float weight) {
             auto pixel = (*this)(p);
-            pixel.color += vec4(sample.color * weight, 0);
-            pixel.normal += vec4(sample.normal * weight, 0);
-            pixel.albedo += vec4(sample.albedo * weight, 0);
-            pixel.weight += weight;
+            pixel.color.get() += float4(sample.color * weight, 0);
+            pixel.normal.get() += float4(sample.normal * weight, 0);
+            pixel.albedo.get() += float4(sample.albedo * weight, 0);
+            pixel.weight.get() += weight;
         }
     };
 } // namespace miyuki::core

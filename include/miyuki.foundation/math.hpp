@@ -27,51 +27,55 @@
 #include <miyuki.serialize/serialize.hpp>
 #include <miyuki.foundation/defs.h>
 #include <xmmintrin.h>
-#include <glm/glm.hpp>
-#include <glm/gtx/transform.hpp>
+#include <miyuki.math/math.hpp>
 #include <cmath>
 
 
 namespace miyuki {
-
+    using namespace math;
     using json = serialize::json::json;
     using Float = float;
-    using namespace glm;
-    using Point3f = vec3;
-    using Vec3f = vec3;
-    using Normal3f = vec3;
-    using Point2f = vec2;
-    using Point2i = ivec2;
-    using Point3i = ivec3;
-}
-namespace glm {
+    using Point3f = math::Array<float, 3>;
+    using Vec3f = math::Array<float, 3>;
+    using Vec2i = math::Array<int, 2>;
+    using Vec2f = math::Array<float, 2>;
+    using Normal3f =  math::Array<float, 3>;
+    using Point2f = math::Array<float, 2>;
+    using Point2i = math::Array<int, 2>;
+    using Point3i =  math::Array<int, 3>;
+    using Matrix4f = math::Matrix4<float>;
+    using Matrix3f = math::Matrix3<float>;
+
     using json = nlohmann::json;
-
-    template<int N, typename T, qualifier Q>
-    inline void to_json(json &j, const vec<N, T, Q> &v) {
-        j = json::array();
-        for (int i = 0; i < N; i++) {
-            j[i] = v[i];
+    namespace math {
+        template<class T, int N>
+        inline void to_json(json &j, const math::Array<T, N> &v) {
+            j = json::array();
+            for (int i = 0; i < N; i++) {
+                j[i] = v[i];
+            }
         }
-    }
 
-    template<int N, typename T, qualifier Q>
-    inline void from_json(const json &j, vec<N, T, Q> &v) {
-        for (int i = 0; i < N; i++) {
-            v[i] = j[i];
+        template<class T, int N>
+        inline void from_json(const json &j, math::Array<T, N> &v) {
+            for (int i = 0; i < N; i++) {
+                v[i] = j[i];
+            }
         }
-    }
 
-    inline void to_json(json &j, const mat4 &m) {
-        j = json::array();
-        for (int i = 0; i < 4; i++) {
-            j[i] = m[i];
+        template<class T>
+        inline void to_json(json &j, const math::Matrix4<T> &m) {
+            j = json::array();
+            for (int i = 0; i < 4; i++) {
+                j[i] = m[i];
+            }
         }
-    }
 
-    inline void from_json(const json &j, mat4 &m) {
-        for (int i = 0; i < 4; i++) {
-            m[i] = j[i].get<vec4>();
+        template<class T>
+        inline void from_json(const json &j, math::Matrix4<T> &m) {
+            for (int i = 0; i < 4; i++) {
+                m[i] = j[i].get<Array<T, 4>>();
+            }
         }
     }
 }
@@ -90,13 +94,16 @@ namespace miyuki {
         T data;
     };
 
+    template<class Value>
     class Transform {
+        using mat4 = Matrix4<Value>;
+        using mat3 = Matrix3<Value>;
         mat4 T, invT;
         mat3 T3, invT3, invT3T;
     public:
         Transform() = default;
 
-        explicit Transform(const mat4 &T) : T(T), invT(glm::inverse(T)) {
+        explicit Transform(const mat4 &T) : T(T), invT(math::inverse(T)) {
             T3 = mat3(T);
             invT3 = mat3(invT);
             invT3T = transpose(invT3);
@@ -114,43 +121,43 @@ namespace miyuki {
             return Transform{invT, T};
         }
 
-        [[nodiscard]] vec3 transformVec3(const vec3 &v) const {
+        [[nodiscard]] Vec3f transformVec3(const Vec3f &v) const {
             return T3 * v;
         }
 
-        [[nodiscard]] vec3 transformPoint3(const vec3 &v) const {
-            auto x = T * vec4(v, 1);
+        [[nodiscard]] Point3f transformPoint3(const Point3f &v) const {
+            auto x = T * Array<float, 4>{v.x(), v.y(), v.z(), 1.0f};
             if (x.w == 1) {
                 return x;
             }
-            return vec3(x) / x.w;
+            return Vec3f(x) / x.w;
         }
 
-        [[nodiscard]] vec3 transformNormal3(const vec3 &v) const {
+        [[nodiscard]] Normal3f transformNormal3(const Normal3f &v) const {
             return invT3T * v;
         }
     };
 
     class TransformManipulator {
     public:
-        Angle<vec3> rotation;
-        vec3 translation;
+        Angle<Vec3f> rotation;
+        Vec3f translation;
 
-        [[nodiscard]] Transform toTransform() const {
-            mat4 m = identity<mat4>();
-            m = rotate(rotation.get().z, Vec3f(0, 0, 1)) * m;
-            m = rotate(rotation.get().y, Vec3f(1, 0, 0)) * m;
-            m = rotate(rotation.get().x, Vec3f(0, 1, 0)) * m;
-            m = glm::translate(translation) * m;
-            return Transform(m);
+        [[nodiscard]] Transform<float> toTransform() const {
+            Matrix4f m = Matrix4f::identity();
+            m = Matrix4f::rotate(rotation.get().z(), Vec3f(0, 0, 1)) * m;
+            m = Matrix4f::rotate(rotation.get().y(), Vec3f(1, 0, 0)) * m;
+            m = Matrix4f::rotate(rotation.get().x(), Vec3f(0, 1, 0)) * m;
+            m = Matrix4f::translate(translation) * m;
+            return Transform<float>(m);
         }
     };
 
     inline void ComputeLocalFrame(const Vec3f &v1, Vec3f *v2, Vec3f *v3) {
-        if (std::abs(v1.x) > std::abs(v1.y))
-            *v2 = Vec3f(-v1.z, 0, v1.x) / std::sqrt(v1.x * v1.x + v1.z * v1.z);
+        if (std::abs(v1.x()) > std::abs(v1.y()))
+            *v2 = Vec3f(-v1.z(), 0, v1.x()) / Vec3f(std::sqrt(v1.x() * v1.x() + v1.z() * v1.z()));
         else
-            *v2 = Vec3f(0, v1.z, -v1.y) / std::sqrt(v1.y * v1.y + v1.z * v1.z);
+            *v2 = Vec3f(0, v1.z(), -v1.y()) / Vec3f(std::sqrt(v1.y() * v1.y() + v1.z() * v1.z()));
         *v3 = normalize(cross(v1, *v2));
     }
 
@@ -159,27 +166,31 @@ namespace miyuki {
 
         explicit CoordinateSystem(const Vec3f &v) : normal(v) { ComputeLocalFrame(v, &localX, &localZ); }
 
-        [[nodiscard]] Vec3f worldToLocal(const Vec3f &v) const { return Vec3f(dot(localX, v), dot(normal, v), dot(localZ, v)); }
+        [[nodiscard]] Vec3f worldToLocal(const Vec3f &v) const {
+            return Vec3f(dot(localX, v), dot(normal, v), dot(localZ, v));
+        }
 
-        [[nodiscard]] Vec3f localToWorld(const Vec3f &v) const { return Vec3f(v.x * localX + v.y * normal + v.z * localZ); }
+        [[nodiscard]] Vec3f localToWorld(const Vec3f &v) const {
+            return Vec3f(v.x() * localX + v.y() * normal + v.z() * localZ);
+        }
 
     private:
         Vec3f normal;
         Vec3f localX, localZ;
     };
 
-    template<int N, class T, qualifier Q>
+    template<class T, int N>
     class BoundBox {
     public:
-        vec<N, T, Q> pMin, pMax;
+        Array<T, N> pMin, pMax;
 
         BoundBox unionOf(const BoundBox &box) const { return BoundBox{min(pMin, box.pMin), max(pMax, box.pMax)}; }
 
-        BoundBox unionOf(const vec<N, T, Q> &rhs) const { return BoundBox{min(pMin, rhs), max(pMax, rhs)}; }
+        BoundBox unionOf(const Array<T, N> &rhs) const { return BoundBox{min(pMin, rhs), max(pMax, rhs)}; }
 
-        vec<N, T, Q> centroid() const { return (pMin + pMax) * 0.5f; }
+        Array<T, N> centroid() const { return (pMin + pMax) * 0.5f; }
 
-        vec<N, T, Q> size() const { return pMax - pMin; }
+        Array<T, N> size() const { return pMax - pMin; }
 
         T surfaceArea() const {
             auto a = (size()[0] * size()[1] + size()[0] * size()[2] + size()[1] * size()[2]);
@@ -196,21 +207,21 @@ namespace miyuki {
             return false;
         }
 
-        vec<N, T, Q> offset(const vec<N, T, Q> &p) const {
+        Array<T, N> offset(const Array<T, N> &p) const {
             auto o = p - pMin;
             return o / size();
         }
     };
 
-    using Bounds3f = BoundBox<3, float, qualifier::defaultp>;
+    using Bounds3f = BoundBox<float, 3>;
 
     template<class T>
     T lerp3(const T &v1, const T &v2, const T &v3, float u, float v) {
         return (1 - u - v) * v1 + u * v2 + v * v3;
     }
 
-    template<int N, typename T, qualifier Q>
-    T minComp(const vec<N, T, Q> &v) {
+    template<class T, int N>
+    T minComp(const Array<T, N> &v) {
         auto x = v[0];
         for (int i = 1; i < N; i++) {
             x = min(x, v[i]);
@@ -218,8 +229,8 @@ namespace miyuki {
         return x;
     }
 
-    template<int N, typename T, qualifier Q>
-    T maxComp(const vec<N, T, Q> &v) {
+    template<class T, int N>
+    T maxComp(const Array<T, N> &v) {
         auto x = v[0];
         for (int i = 1; i < N; i++) {
             x = max(x, v[i]);
@@ -233,13 +244,15 @@ namespace miyuki {
     }
 
 
-    inline vec3 FaceForward(const vec3 &v, const vec3 &n) {
-        return dot(v, n) < 0 ? -v : v;
+    inline Vec3f FaceForward(const Vec3f &v, const Vec3f &n) {
+        return dot(v, n) < 0.0f ? Vec3f(-1.0f * v) : v;
     }
 
-    inline void to_json(json &j, const Transform &transform) { j = transform.matrix(); }
+    template<class T>
+    inline void to_json(json &j, const Transform<T> &transform) { j = transform.matrix(); }
 
-    inline void from_json(const json &j, Transform &transform) { transform = Transform(j.get<mat4>()); }
+    template<class T>
+    inline void from_json(const json &j, Transform<T> &transform) { transform = Transform(j.get<Matrix4<T>>()); }
 
     template<class T>
     void to_json(json &j, const Angle<T> &v) {
@@ -268,8 +281,8 @@ namespace miyuki {
     }
 
     inline void from_json(const json &j, TransformManipulator &transform) {
-        transform.rotation = j.at("rotation").get<Angle<vec3>>();
-        transform.translation = j.at("translation").get<vec3>();
+        transform.rotation = j.at("rotation").get<Angle<Vec3f>>();
+        transform.translation = j.at("translation").get<Vec3f>();
     }
 } // namespace miyuki
 

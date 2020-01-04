@@ -55,16 +55,16 @@ namespace miyuki {
                     log::log("failed to load {}\n", path.extension().string());
                     return nullptr;
                 }
-                auto invGamma = [](const vec3 &v, float gamma) {
-                    return pow(v, vec3(1.0f / gamma));
+                auto invGamma = [](const Vec3f &v, float gamma) {
+                    return pow(v, Vec3f(1.0f / gamma));
                 };
-                auto image = std::make_shared<RGBAImage>(ivec2(w, h));
+                auto image = std::make_shared<RGBAImage>(Vec2i(w, h));
                 if (comp == 4) {
                     ParallelFor(
                             0, w * h,
                             [=](int i, int threadIdx) {
                                 image->data()[i] =
-                                        vec4(invGamma(vec3(data[4 * i + 0], data[4 * i + 1], data[4 * i + 2]) / 255.0f,
+                                        float4(invGamma(Vec3f(data[4 * i + 0], data[4 * i + 1], data[4 * i + 2]) / 255.0f,
                                                       1.0f / 2.2f), data[4 * i + 3] / 255.0f);
                             },
                             4096);
@@ -72,8 +72,8 @@ namespace miyuki {
                     ParallelFor(
                             0, w * h,
                             [=](int i, int threadIdx) {
-                                image->data()[i] = vec4(
-                                        invGamma(vec3(data[3 * i + 0], data[3 * i + 1], data[3 * i + 2])
+                                image->data()[i] = float4(
+                                        invGamma(Vec3f(data[3 * i + 0], data[3 * i + 1], data[3 * i + 2])
                                                  / 255.0f, 1.0f / 2.2f), 1);
                             }, 4096);
                 } else {

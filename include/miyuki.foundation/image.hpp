@@ -26,11 +26,11 @@
 namespace miyuki {
     template<class T>
     class TImage {
-        ivec2 dimension;
+        Vec2i dimension;
         std::vector<T> texels;
 
     public:
-        TImage(const ivec2 &dim) : dimension(dim), texels(dim[0] * dim[1]) {}
+        TImage(const Vec2i &dim) : dimension(dim), texels(dim[0] * dim[1]) {}
 
         const T &operator()(int x, int y) const {
             x = std::clamp(x, 0, dimension[0] - 1);
@@ -44,30 +44,30 @@ namespace miyuki {
             return texels[x + y * dimension[0]];
         }
 
-        const T &operator()(float x, float y) const { return (*this)(vec2(x, y)); }
+        const T &operator()(float x, float y) const { return (*this)(Vec2f(x, y)); }
 
-        T &operator()(float x, float y) { return (*this)(vec2(x, y)); }
+        T &operator()(float x, float y) { return (*this)(Vec2f(x, y)); }
 
-        const T &operator()(const ivec2 &p) const { return (*this)(p.x, p.y); }
+        const T &operator()(const Vec2i &p) const { return (*this)(p.x(), p.y()); }
 
-        T &operator()(const ivec2 &p) { return (*this)(p.x, p.y); }
+        T &operator()(const Vec2i &p) { return (*this)(p.x(), p.y()); }
 
-        const T &operator()(const vec2 &p) const { return (*this)(ivec2(p * vec2(dimension))); }
+        const T &operator()(const Vec2f &p) const { return (*this)(Vec2i(p * Vec2f(dimension))); }
 
-        T &operator()(const vec2 &p) { return (*this)(ivec2(p * vec2(dimension))); }
+        T &operator()(const Vec2f &p) { return (*this)(Vec2i(p * Vec2f(dimension))); }
 
         T *data() { return texels.data(); }
 
-        const T *data() const { return texels.data(); }
+        [[nodiscard]] const T *data() const { return texels.data(); }
     };
 
-    class RGBImage : public TImage<vec3> {
+    class RGBImage : public TImage<Vec3f> {
     public:
-        using TImage<vec3>::TImage;
+        using TImage<Vec3f>::TImage;
     };
 
-    class RGBAImage : public TImage<vec4> {
-        using TImage<vec4>::TImage;
+    class RGBAImage : public TImage<float4> {
+        using TImage<float4>::TImage;
     };
 
 } // namespace miyuki
