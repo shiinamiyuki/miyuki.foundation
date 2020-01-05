@@ -221,9 +221,9 @@ namespace miyuki {
     using Bounds2f = BoundBox<float, 2>;
     using Bounds3i = BoundBox<int, 3>;
     using Bounds2i = BoundBox<int, 2>;
-    template<class T>
-    T lerp3(const T &v1, const T &v2, const T &v3, float u, float v) {
-        return (1.0 - u - v) * v1 + u * v2 + v * v3;
+    template<class T, int N>
+    Array<T, N> lerp3(const Array<T, N> &v1, const Array<T, N> &v2, const Array<T, N> &v3, T u, T v) {
+        return (T(1.0f) - u - v) * v1 + u * v2 + v * v3;
     }
 
     template<class T, int N>
