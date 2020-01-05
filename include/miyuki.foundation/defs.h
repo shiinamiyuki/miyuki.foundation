@@ -85,7 +85,7 @@ namespace miyuki {
         }
     }
 
-#define MIYUKI_ASSERT(expr)   _assert(expr, fmt::format("{} failed at {}:{}\n",#expr, __FILE__,__LINE__))
+#define MIYUKI_ASSERT(expr)   __assert(expr, fmt::format("{} failed at {}:{}\n",#expr, __FILE__,__LINE__))
 
 #else
 #define MIYUKI_CHECK(expr)

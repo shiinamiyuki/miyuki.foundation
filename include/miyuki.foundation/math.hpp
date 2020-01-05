@@ -223,7 +223,7 @@ namespace miyuki {
     using Bounds2i = BoundBox<int, 2>;
     template<class T>
     T lerp3(const T &v1, const T &v2, const T &v3, float u, float v) {
-        return (1 - u - v) * v1 + u * v2 + v * v3;
+        return (1.0 - u - v) * v1 + u * v2 + v * v3;
     }
 
     template<class T, int N>
