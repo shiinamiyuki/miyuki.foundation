@@ -30,11 +30,27 @@ namespace miyuki {
 }
 #else
 
-#include <filesystem>
+#ifdef __GNUC__
+#if __GNUC__   >= 8
 
+#include <filesystem>
 namespace miyuki {
     namespace fs = std::filesystem;
 }
+#else
+#include <experimental/filesystem>
+namespace miyuki {
+    namespace fs = std::experimental::filesystem;
+}
+#endif
+
+#else
+
+#include <filesystem>
+namespace miyuki {
+    namespace fs = std::filesystem;
+}
+#endif
 #endif
 
 namespace miyuki {

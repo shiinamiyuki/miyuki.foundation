@@ -128,7 +128,7 @@ namespace miyuki {
         [[nodiscard]] Point3f transformPoint3(const Point3f &v) const {
             auto x = T * Array<float, 4>{v.x(), v.y(), v.z(), 1.0f};
             if (x.w() == 1) {
-                return x;
+                return Vec3f(x);
             }
             return Vec3f(x) / x.w();
         }

@@ -34,6 +34,10 @@ namespace miyuki::core {
         using Vec3f::Vec3f;
 
         RGBSpectrum(const Vec3f &v) : Vec3f(v) {}
+
+        [[nodiscard]] Float luminance()const{
+            return dot(*this, float3(0.2126,0.7152,0.0722));
+        }
     };
 
     using Spectrum = RGBSpectrum;

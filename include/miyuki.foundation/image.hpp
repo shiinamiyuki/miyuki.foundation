@@ -26,10 +26,11 @@
 namespace miyuki {
     template<class T>
     class TImage {
-        Vec2i dimension;
+
         std::vector<T> texels;
 
     public:
+        const Vec2i dimension;
         TImage(const Vec2i &dim) : dimension(dim), texels(dim[0] * dim[1]) {}
 
         const T &operator()(int x, int y) const {
