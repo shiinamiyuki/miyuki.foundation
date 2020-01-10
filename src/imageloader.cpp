@@ -50,7 +50,8 @@ namespace miyuki {
                 }
                 int w, h;
                 int comp;
-                auto data = stbi_load(path.string().c_str(), &w, &h, &comp, 3);
+                auto _data = stbi_load(path.string().c_str(), &w, &h, &comp, 3);
+                std::shared_ptr<stbi_uc> data(_data, [](stbi_uc *p) { stbi_image_free(p); });
                 if (!data) {
                     log::log("failed to load {}\n", path.extension().string());
                     return nullptr;
@@ -58,14 +59,16 @@ namespace miyuki {
                 auto invGamma = [](const Vec3f &v, float gamma) {
                     return pow(v, Vec3f(1.0f / gamma));
                 };
+
                 auto image = std::make_shared<RGBAImage>(Vec2i(w, h));
                 if (comp == 4) {
                     ParallelFor(
                             0, w * h,
                             [=](int i, int threadIdx) {
                                 image->data()[i] =
-                                        float4(invGamma(Vec3f(data[4 * i + 0], data[4 * i + 1], data[4 * i + 2]) / 255.0f,
-                                                      1.0f / 2.2f), data[4 * i + 3] / 255.0f);
+                                        float4(invGamma(Vec3f(data.get()[4 * i + 0], data.get()[4 * i + 1],
+                                                              data.get()[4 * i + 2]) / 255.0f,
+                                                        1.0f / 2.2f), data.get()[4 * i + 3] / 255.0f);
                             },
                             4096);
                 } else if (comp == 3) {
@@ -73,14 +76,14 @@ namespace miyuki {
                             0, w * h,
                             [=](int i, int threadIdx) {
                                 image->data()[i] = float4(
-                                        invGamma(Vec3f(data[3 * i + 0], data[3 * i + 1], data[3 * i + 2])
+                                        invGamma(Vec3f(data.get()[3 * i + 0], data.get()[3 * i + 1],
+                                                       data.get()[3 * i + 2])
                                                  / 255.0f, 1.0f / 2.2f), 1);
                             }, 4096);
                 } else {
                     MIYUKI_NOT_IMPLEMENTED();
                 }
                 cached[fs::absolute(path).string()] = ImageRecord{image, last};
-                stbi_image_free(data);
                 return image;
             } else {
                 return iter->second.image;

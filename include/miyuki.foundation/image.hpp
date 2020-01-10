@@ -23,6 +23,7 @@
 
 #include <miyuki.foundation/math.hpp>
 
+
 namespace miyuki {
     template<class T>
     class TImage {
@@ -69,6 +70,8 @@ namespace miyuki {
 
     class RGBAImage : public TImage<float4> {
         using TImage<float4>::TImage;
+    public:
+        void write(const fs::path&, Float gamma);
     };
 
 } // namespace miyuki
