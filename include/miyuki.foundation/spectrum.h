@@ -47,7 +47,7 @@ namespace miyuki::core {
     }
 
     inline Spectrum RemoveNaN(const Spectrum & s){
-        auto removeNan = [=](float x){return std::isnan(x) ? 0 : x;};
+        auto removeNan = [=](float x){return std::isnan(x) || std::isinf(x) ? 0 : x;};
         return Spectrum(removeNan(s[0]),
                         removeNan(s[1]),
                         removeNan(s[2]));

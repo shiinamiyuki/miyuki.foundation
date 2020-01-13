@@ -28,7 +28,6 @@
 #include <cstdint>
 
 namespace miyuki {
-    template<class T>
     class Arena {
         static constexpr size_t align16(size_t x) {
             return (x + 15ULL) & (~15ULL);
@@ -36,63 +35,67 @@ namespace miyuki {
 
         struct Block {
             size_t size;
-            size_t curPos;
             uint8_t *data;
 
-            explicit Block(size_t size) : data(new uint8_t[size]), size(size), curPos(0) {}
-
-            [[nodiscard]] size_t avaliable() const {
-                return size - curPos;
+            Block(uint8_t *data, size_t size) : size(size), data(data) {
+//                log::log("???\n");
             }
 
             ~Block() = default;
         };
 
-        const size_t blockSize = align16(sizeof(T)) * 8;
         std::list<Block> availableBlocks, usedBlocks;
 
-
+        size_t currentBlockPos = 0;
+        Block currentBlock;
     public:
-        Arena() {
-            availableBlocks.emplace_back(Block(blockSize));
+        Arena():currentBlock(new uint8_t[262144], 262144) {
         }
 
-        template<class... Args>
-        T *allocN(size_t count, Args &&... args) {
+        template<class T>
+        T *allocN(size_t count) {
             typename std::list<Block>::iterator iter;
-            for (iter = availableBlocks.begin(); iter != availableBlocks.end(); iter++) {
-                if (iter->avaliable() >= sizeof(T) * count) {
-                    break;
+            auto allocSize = sizeof(T) * count;
+
+            uint8_t  * p = nullptr;
+            if(currentBlockPos + allocSize > currentBlock.size){
+                usedBlocks.emplace_front(currentBlock);
+                currentBlockPos = 0;
+                for(iter = availableBlocks.begin();iter!=availableBlocks.end();iter++){
+                    if(iter->size >= allocSize){
+                        currentBlockPos = allocSize;
+                        currentBlock = *iter;
+                        availableBlocks.erase(iter);
+                        break;
+                    }
+                }
+                if(iter == availableBlocks.end()) {
+                    auto sz = std::max(allocSize, 262144ull);
+                    currentBlock = Block(new uint8_t[sz], sz);
                 }
             }
-            if (iter == availableBlocks.end()) {
-                availableBlocks.emplace_front(Block(std::max(sizeof(T) * count, blockSize)));
-                iter = availableBlocks.begin();
+            p = currentBlock.data + currentBlockPos;
+            currentBlockPos += allocSize;
+            if constexpr (!std::is_trivially_constructible_v<T>) {
+                for (int i = 0; i < count; i++) {
+                    new(p + i * sizeof(T)) T();
+                }
             }
-            uint8_t *p = iter->data + iter->curPos;
-            iter->curPos += sizeof(T) * count;
-            if (iter->avaliable() == 0) {
-                usedBlocks.splice(usedBlocks.begin(), availableBlocks, iter);
-            }
-            for (int i = 0; i < count; i++) {
-                new(p + i * sizeof(T)) T(std::forward<Args>(args)...);
-            }
-            return reinterpret_cast<T*>(p);
+            return reinterpret_cast<T *>(p);
         }
 
-        template<class... Args>
-        T *alloc(Args &&...args) {
-            return allocN(1, std::forward<Args>(args)...);
+        template<typename T>
+        T *alloc() {
+            return allocN<T>(1);
         }
 
         void reset() {
-            for (auto &i:usedBlocks) {
-                i.curPos = 0;
-            }
+            currentBlockPos = 0;
             availableBlocks.splice(availableBlocks.begin(), usedBlocks);
         }
 
         ~Arena() {
+            delete [] currentBlock.data;
             for (auto i: availableBlocks) {
                 delete[]i.data;
             }
