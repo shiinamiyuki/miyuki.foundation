@@ -39,7 +39,7 @@ namespace miyuki {
             size_t curPos;
             uint8_t *data;
 
-            Block(size_t size) : data(new uint8_t[size]), size(size), curPos(0) {}
+            explicit Block(size_t size) : data(new uint8_t[size]), size(size), curPos(0) {}
 
             [[nodiscard]] size_t avaliable() const {
                 return size - curPos;
