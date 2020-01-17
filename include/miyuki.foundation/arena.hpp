@@ -70,7 +70,7 @@ namespace miyuki {
                     }
                 }
                 if(iter == availableBlocks.end()) {
-                    auto sz = std::max(allocSize, 262144ull);
+                    auto sz = std::max<size_t>(allocSize, 262144ull);
                     currentBlock = Block(new uint8_t[sz], sz);
                 }
             }
